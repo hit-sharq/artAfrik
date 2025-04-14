@@ -98,8 +98,8 @@ export default function About() {
             <h2>Our Team</h2>
             <div className="team-grid">
               <div className="team-member">
-                <div className="member-image">
-                  <Image src="/placeholder.svg?height=300&width=300" alt="Team Member" width={300} height={300} />
+                <div className="member-image" style={{ width: 300, height: 300, position: 'relative' }}>
+                  <Image src="/images/musa.JPG" alt="Mutuku Moses" fill style={{ objectFit: 'contain' }} />
                 </div>
                 <h3>Mutuku Moses</h3>
                 <p className="member-title">Founder & Curator</p>
@@ -120,8 +120,8 @@ export default function About() {
                 </p>
               </div>
               <div className="team-member">
-                <div className="member-image">
-                  <Image src="/placeholder.svg?height=300&width=300" alt="Team Member" width={300} height={300} />
+                <div className="member-image" style={{ width: 300, height: 300, position: 'relative' }}>
+                  <Image src="/images/lilian.jpg" alt="Lilian Ndanu" fill style={{ objectFit: 'contain' }} />
                 </div>
                 <h3>Lilian Ndanu</h3>
                 <p className="member-title">Cultural Specialist</p>
