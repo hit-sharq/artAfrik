@@ -16,6 +16,9 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" data-google-analytics-opt-out="">
+        <head>
+          <link rel="icon" href="/images/favicon.ico" />
+        </head>
         <body>{children}</body>
       </html>
     </ClerkProvider>
