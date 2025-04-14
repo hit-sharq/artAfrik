@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache"
 
 // Function to check if user is admin
 async function isAdmin() {
-  const { userId } = auth()
+  const { userId } = await auth()
 
   if (!userId) {
     return false

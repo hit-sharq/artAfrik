@@ -6,7 +6,6 @@ import "./globals.css"
 export const metadata: Metadata = {
   title: "Arts Afrik - Traditional African Art",
   description: "Connect with authentic traditional African art and curios from across the continent.",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -16,12 +15,9 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="en" data-google-analytics-opt-out="">
         <body>{children}</body>
       </html>
     </ClerkProvider>
   )
 }
-
-
-import './globals.css'
