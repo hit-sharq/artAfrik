@@ -110,7 +110,7 @@ export default function Home() {
             </div>
             <div className="about-preview-image">
               <Image
-                src="/placeholder.svg?height=400&width=600"
+                src="/images/about art artafriks.jpg"
                 alt="African Artisan at Work"
                 width={600}
                 height={400}
