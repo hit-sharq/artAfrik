@@ -1,9 +1,57 @@
+"use client"
+
+import React, { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import MainLayout from "@/components/MainLayout"
+import MainLayout from "../components/MainLayout"
 import "./home.css"
 
+interface Category {
+  name: string
+  description: string
+  image: string
+}
+
+interface Artwork {
+  id: string
+  title: string
+  description: string
+  price: number
+  woodType: string
+  region: string
+  size: string
+  images: string[]
+}
+
 export default function Home() {
+  const [categories, setCategories] = useState<Category[]>([])
+  const [featuredArtworks, setFeaturedArtworks] = useState<Artwork[]>([])
+
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const res = await fetch("/api/categories")
+        const data = await res.json()
+        setCategories(data)
+      } catch (error) {
+        console.error("Failed to fetch categories:", error)
+      }
+    }
+
+    async function fetchFeaturedArtworks() {
+      try {
+        const res = await fetch("/api/featured-artworks")
+        const data = await res.json()
+        setFeaturedArtworks(data)
+      } catch (error) {
+        console.error("Failed to fetch featured artworks:", error)
+      }
+    }
+
+    fetchCategories()
+    fetchFeaturedArtworks()
+  }, [])
+
   return (
     <MainLayout>
       <section className="hero">
@@ -31,29 +79,22 @@ export default function Home() {
         <div className="container">
           <h2 className="section-title">Explore Our Categories</h2>
           <div className="categories-grid">
-            <div className="category-card">
-              <div className="category-image">
-                <Image src="/placeholder.svg?height=300&width=300" alt="Rosewood Art" width={300} height={300} />
+            {categories.length === 0 && <p>Loading categories...</p>}
+            {categories.map((category) => (
+              <div className="category-card" key={category.name}>
+                <div className="category-image">
+                  <Image
+                    src={category.image}
+                    alt={`${category.name} Art`}
+                    width={300}
+                    height={300}
+                    priority={true}
+                  />
+                </div>
+                <h3>{category.name}</h3>
+                <p>{category.description}</p>
               </div>
-              <h3>Rosewood</h3>
-              <p>Elegant sculptures with rich, deep reddish-brown tones</p>
-            </div>
-
-            <div className="category-card">
-              <div className="category-image">
-                <Image src="/placeholder.svg?height=300&width=300" alt="Ebony Art" width={300} height={300} />
-              </div>
-              <h3>Ebony</h3>
-              <p>Striking black wood pieces with exceptional durability</p>
-            </div>
-
-            <div className="category-card">
-              <div className="category-image">
-                <Image src="/placeholder.svg?height=300&width=300" alt="Mahogany Art" width={300} height={300} />
-              </div>
-              <h3>Mahogany</h3>
-              <p>Beautiful reddish-brown wood with straight grain</p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -62,21 +103,23 @@ export default function Home() {
         <div className="container">
           <h2 className="section-title">Featured Artworks</h2>
           <div className="featured-grid">
-            {[1, 2, 3, 4].map((item) => (
-              <div className="art-card" key={item}>
+            {featuredArtworks.length === 0 && <p>Loading featured artworks...</p>}
+            {featuredArtworks.map((art) => (
+              <div className="art-card" key={art.id}>
                 <div className="art-image">
                   <Image
-                    src="/placeholder.svg?height=400&width=300"
-                    alt={`Featured Art ${item}`}
+                    src={art.images[0] || "/placeholder.svg"}
+                    alt={art.title}
                     width={300}
                     height={400}
+                    priority={true}
                   />
                 </div>
                 <div className="art-info">
-                  <h3>Traditional Mask</h3>
-                  <p className="art-origin">West Africa</p>
-                  <p className="art-price">$120.00</p>
-                  <Link href={`/gallery/${item}`} className="button view-button">
+                  <h3>{art.title}</h3>
+                  <p className="art-origin">{art.region}</p>
+                  <p className="art-price">${art.price.toFixed(2)}</p>
+                  <Link href={`/gallery/${art.id}`} className="button view-button">
                     View Details
                   </Link>
                 </div>

@@ -1,13 +1,27 @@
-import type React from "react"
-import Header from "./Header"
-import Footer from "./Footer"
+import React, { ReactNode } from "react"
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+interface MainLayoutProps {
+  children: ReactNode
+}
+
+export default function MainLayout({ children }: MainLayoutProps) {
   return (
     <>
-      <Header />
+      <header>
+        <nav>
+          {/* Add navigation links here */}
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/gallery">Gallery</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/contact">Contact</a></li>
+          </ul>
+        </nav>
+      </header>
       <main>{children}</main>
-      <Footer />
+      <footer>
+        <p>© {new Date().getFullYear()} Arts Afrik. All rights reserved.</p>
+      </footer>
     </>
   )
 }

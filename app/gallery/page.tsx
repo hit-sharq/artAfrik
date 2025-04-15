@@ -1,11 +1,11 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import MainLayout from "@/components/MainLayout"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@clerk/nextjs"
+import MainLayout from "../../components/MainLayout"
 import "./gallery.css"
 
 // Mock data for art listings
@@ -77,6 +77,15 @@ const mockArtListings = [
 ]
 
 export default function Gallery() {
+  const { isSignedIn, isLoaded } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push("/sign-in")
+    }
+  }, [isLoaded, isSignedIn, router])
+
   const [filters, setFilters] = useState({
     woodType: "",
     region: "",
@@ -96,17 +105,12 @@ export default function Gallery() {
   }
 
   const filteredArt = mockArtListings.filter((art) => {
-    // Filter by wood type
     if (filters.woodType && filters.woodType !== "All" && art.woodType !== filters.woodType) {
       return false
     }
-
-    // Filter by region
     if (filters.region && filters.region !== "All" && art.region !== filters.region) {
       return false
     }
-
-    // Filter by price range
     if (filters.priceRange) {
       if (filters.priceRange === "Under $100" && art.price >= 100) {
         return false
@@ -116,9 +120,12 @@ export default function Gallery() {
         return false
       }
     }
-
     return true
   })
+
+  if (!isLoaded || !isSignedIn) {
+    return <MainLayout><p>Redirecting to sign in...</p></MainLayout>
+  }
 
   return (
     <MainLayout>
