@@ -1,10 +1,11 @@
+
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import MainLayout from "@/components/MainLayout"
+import MainLayout from "../../../components/MainLayout"
 import "./product-detail.css"
 
 // Mock data for art listings

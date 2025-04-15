@@ -1,10 +1,9 @@
+
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@clerk/nextjs"
 import MainLayout from "../../components/MainLayout"
 import "./gallery.css"
 
@@ -77,15 +76,6 @@ const mockArtListings = [
 ]
 
 export default function Gallery() {
-  const { isSignedIn, isLoaded } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.push("/sign-in")
-    }
-  }, [isLoaded, isSignedIn, router])
-
   const [filters, setFilters] = useState({
     woodType: "",
     region: "",
@@ -122,10 +112,6 @@ export default function Gallery() {
     }
     return true
   })
-
-  if (!isLoaded || !isSignedIn) {
-    return <MainLayout><p>Redirecting to sign in...</p></MainLayout>
-  }
 
   return (
     <MainLayout>
