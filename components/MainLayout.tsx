@@ -1,4 +1,5 @@
 import React, { ReactNode } from "react"
+import "./MainLayout.css"
 
 interface MainLayoutProps {
   children: ReactNode

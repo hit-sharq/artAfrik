@@ -3,12 +3,16 @@
   background-color: var(--primary-color);
   color: var(--light-text);
   padding: 80px 0;
-  text-align: center;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .hero-content {
   max-width: 800px;
-  margin: 0 auto;
+  margin: 0;
+  padding-left: 40px;
 }
 
 .hero h1 {
@@ -30,7 +34,6 @@
 
 .hero-buttons {
   display: flex;
-  justify-content: center;
   gap: 20px;
 }
 
@@ -207,6 +210,11 @@
 }
 
 @media (max-width: 480px) {
+  .hero {
+    flex-direction: column;
+    text-align: center;
+  }
+
   .hero h1 {
     font-size: 2rem;
   }
