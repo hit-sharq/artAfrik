@@ -35,6 +35,10 @@ export default function Gallery() {
   const [isLoading, setIsLoading] = useState(true)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 4
+
   const woodTypes = ["All", "Ebony", "Rosewood", "Mahogany"]
   const regions = ["All", "West Africa", "East Africa", "Central Africa", "Southern Africa"]
   const priceRanges = ["All", "Under $100", "$100 - $150", "Over $150"]
@@ -176,7 +180,26 @@ export default function Gallery() {
     }
 
     setFilteredArt(result)
+    setCurrentPage(1) // Reset to first page on filter change
   }, [artListings, filters])
+
+  // Calculate paginated items
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentItems = filteredArt.slice(indexOfFirstItem, indexOfLastItem)
+
+  // Pagination controls handlers
+  const handleNextPage = () => {
+    if (currentPage < Math.ceil(filteredArt.length / itemsPerPage)) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -301,7 +324,7 @@ export default function Gallery() {
             </div>
           ) : filteredArt.length > 0 ? (
             <div className={`gallery-${viewMode}`}>
-              {filteredArt.map((art) => (
+              {currentItems.map((art) => (
                 <div className={`art-card ${viewMode === "list" ? "list-view" : ""}`} key={art.id}>
                   <div className="art-image">
                     <Image src={art.image || "/placeholder.svg"} alt={art.title} fill style={{ objectFit: "cover" }} />
@@ -329,6 +352,21 @@ export default function Gallery() {
               <p>No artworks match your selected filters. Please try different criteria.</p>
               <button className="button" onClick={clearFilters}>
                 Clear All Filters
+              </button>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {filteredArt.length > itemsPerPage && (
+            <div className="pagination-controls">
+              <button onClick={handlePrevPage} disabled={currentPage === 1}>
+                Previous
+              </button>
+              <span>
+                Page {currentPage} of {Math.ceil(filteredArt.length / itemsPerPage)}
+              </span>
+              <button onClick={handleNextPage} disabled={currentPage === Math.ceil(filteredArt.length / itemsPerPage)}>
+                Next
               </button>
             </div>
           )}
