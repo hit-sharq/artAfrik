@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import Header from "./Header"
 import Footer from "./Footer"
+import BackToTop from "./BackToTop"
 import "./MainLayout.css"
 
 interface MainLayoutProps {
@@ -13,6 +14,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <Header />
       <main>{children}</main>
       <Footer />
+      <BackToTop />
     </>
   )
 }
