@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useAuth } from "@clerk/nextjs"
@@ -103,14 +103,48 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("orders")
   const [orders, setOrders] = useState(mockOrders)
   const [artListings, setArtListings] = useState(mockArtListings)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
-  // In a real app, you would check if the user is an admin
-  const isAdmin = true
+  useEffect(() => {
+    async function checkAdminStatus() {
+      if (isLoaded && isSignedIn) {
+        try {
+          const response = await fetch("/api/check-admin")
+          const data = await response.json()
+          setIsAdmin(data.isAdmin)
+        } catch (error) {
+          console.error("Error checking admin status:", error)
+          setIsAdmin(false)
+        } finally {
+          setIsLoading(false)
+        }
+      } else if (isLoaded) {
+        setIsLoading(false)
+      }
+    }
+
+    checkAdminStatus()
+  }, [isLoaded, isSignedIn])
 
   // Redirect if not signed in or not an admin
-  if (isLoaded && (!isSignedIn || !isAdmin)) {
-    router.push("/sign-in?redirect=/dashboard")
-    return null
+  useEffect(() => {
+    if (!isLoading && (!isSignedIn || !isAdmin)) {
+      router.push("/sign-in?redirect=/dashboard")
+    }
+  }, [isLoading, isSignedIn, isAdmin, router])
+
+  if (isLoading || !isSignedIn || !isAdmin) {
+    return (
+      <MainLayout>
+        <div className="container">
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p>Loading dashboard...</p>
+          </div>
+        </div>
+      </MainLayout>
+    )
   }
 
   const handleStatusChange = (orderId: string, newStatus: string) => {

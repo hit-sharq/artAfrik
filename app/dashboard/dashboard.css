@@ -1,5 +1,6 @@
 .dashboard-page {
   padding: 60px 0;
+  font-family: "Poppins", sans-serif;
 }
 
 .dashboard-tabs {
@@ -19,6 +20,7 @@
   cursor: pointer;
   border-radius: var(--border-radius);
   transition: var(--transition);
+  font-family: "Poppins", sans-serif;
 }
 
 .tab-button:hover {
@@ -119,6 +121,7 @@
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   background-color: white;
+  font-family: "Poppins", sans-serif;
 }
 
 /* Art Tab */
@@ -159,6 +162,7 @@
   font-size: 0.8rem;
   cursor: pointer;
   transition: var(--transition);
+  font-family: "Poppins", sans-serif;
 }
 
 .action-button.edit {
@@ -209,6 +213,34 @@
   padding: 15px;
   font-size: 1.1rem;
   margin-top: 10px;
+}
+
+/* Loading state */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 0;
+}
+
+.loading-spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top: 4px solid var(--primary-color);
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 768px) {

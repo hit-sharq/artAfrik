@@ -1,4 +1,6 @@
-import React, { ReactNode } from "react"
+import type { ReactNode } from "react"
+import Header from "./Header"
+import Footer from "./Footer"
 import "./MainLayout.css"
 
 interface MainLayoutProps {
@@ -8,21 +10,9 @@ interface MainLayoutProps {
 export default function MainLayout({ children }: MainLayoutProps) {
   return (
     <>
-      <header>
-        <nav>
-          {/* Add navigation links here */}
-          <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/gallery">Gallery</a></li>
-            <li><a href="/about">About</a></li>
-            <li><a href="/contact">Contact</a></li>
-          </ul>
-        </nav>
-      </header>
+      <Header />
       <main>{children}</main>
-      <footer>
-        <p>© {new Date().getFullYear()} Arts Afrik. All rights reserved.</p>
-      </footer>
+      <Footer />
     </>
   )
 }

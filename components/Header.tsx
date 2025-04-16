@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
@@ -7,9 +8,14 @@ import "./Header.css"
 
 export default function Header() {
   const pathname = usePathname()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const isActive = (path: string) => {
     return pathname === path ? "active" : ""
+  }
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen)
   }
 
   return (
@@ -22,42 +28,58 @@ export default function Header() {
             </Link>
           </div>
 
-          <nav className="nav">
+          <button className="mobile-menu-button" onClick={toggleMobileMenu}>
+            {mobileMenuOpen ? "✕" : "☰"}
+          </button>
+
+          <nav className={`nav ${mobileMenuOpen ? "open" : ""}`}>
             <ul className="nav-list">
               <li className={isActive("/")}>
-                <Link href="/">Home</Link>
+                <Link href="/" onClick={() => setMobileMenuOpen(false)}>
+                  Home
+                </Link>
               </li>
               <li className={isActive("/gallery")}>
-                <Link href="/gallery">Gallery</Link>
+                <Link href="/gallery" onClick={() => setMobileMenuOpen(false)}>
+                  Gallery
+                </Link>
               </li>
               <li className={isActive("/about")}>
-                <Link href="/about">About Us</Link>
+                <Link href="/about" onClick={() => setMobileMenuOpen(false)}>
+                  About Us
+                </Link>
               </li>
               <li className={isActive("/contact")}>
-                <Link href="/contact">Contact</Link>
+                <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>
+                  Contact
+                </Link>
               </li>
             </ul>
-          </nav>
 
-          <div className="auth-buttons">
-            <SignedIn>
-              <div className="user-section">
-                <Link href="/dashboard" className={`dashboard-link ${isActive("/dashboard")}`}>
-                  Dashboard
+            <div className="auth-buttons">
+              <SignedIn>
+                <div className="user-section">
+                  <Link
+                    href="/dashboard"
+                    className={`dashboard-link ${isActive("/dashboard")}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <UserButton afterSignOutUrl="/" />
+                </div>
+              </SignedIn>
+
+              <SignedOut>
+                <Link href="/sign-in" className="sign-in-button" onClick={() => setMobileMenuOpen(false)}>
+                  Sign In
                 </Link>
-                <UserButton afterSignOutUrl="/" />
-              </div>
-            </SignedIn>
-
-            <SignedOut>
-              <Link href="/sign-in" className="sign-in-button">
-                Sign In
-              </Link>
-              <Link href="/sign-up" className="sign-up-button">
-                Sign Up
-              </Link>
-            </SignedOut>
-          </div>
+                <Link href="/sign-up" className="sign-up-button" onClick={() => setMobileMenuOpen(false)}>
+                  Sign Up
+                </Link>
+              </SignedOut>
+            </div>
+          </nav>
         </div>
       </div>
     </header>
