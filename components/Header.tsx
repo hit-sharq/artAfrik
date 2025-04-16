@@ -1,7 +1,5 @@
 "use client"
 
-"use client"
-
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -9,7 +7,7 @@ import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
 import { useTheme } from "next-themes"
 import "./Header.css"
 
-export default function Header() {
+const Header = () => {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { theme, setTheme } = useTheme()
@@ -52,9 +50,9 @@ export default function Header() {
                   Gallery
                 </Link>
               </li>
-              <li className={isActive("/about")}>
-                <Link href="/about" onClick={() => setMobileMenuOpen(false)}>
-                  About Us
+              <li className={isActive("/blog")}>
+                <Link href="/blog" onClick={() => setMobileMenuOpen(false)}>
+                  Blog
                 </Link>
               </li>
               <li className={isActive("/contact")}>
@@ -96,3 +94,5 @@ export default function Header() {
     </header>
   )
 }
+
+export default Header
