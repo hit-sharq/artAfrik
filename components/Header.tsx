@@ -1,14 +1,18 @@
 "use client"
 
+"use client"
+
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
+import { useTheme } from "next-themes"
 import "./Header.css"
 
 export default function Header() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { theme, setTheme } = useTheme()
 
   const isActive = (path: string) => {
     return pathname === path ? "active" : ""
@@ -16,6 +20,10 @@ export default function Header() {
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen)
+  }
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark")
   }
 
   return (
@@ -78,6 +86,9 @@ export default function Header() {
                   Sign Up
                 </Link>
               </SignedOut>
+              <button className="theme-toggle-button" onClick={toggleTheme} aria-label="Toggle Dark Mode">
+                {theme === "dark" ? "🌞" : "🌙"}
+              </button>
             </div>
           </nav>
         </div>

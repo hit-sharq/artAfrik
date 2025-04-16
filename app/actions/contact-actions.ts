@@ -35,8 +35,8 @@ export async function sendContactForm(data: ContactFormData) {
 
     // Prepare email content
     const mailOptions = {
-      from: process.env.EMAIL_FROM || "info@artsafrik.com",
-      to: process.env.EMAIL_TO || "contact@artsafrik.com",
+      from: process.env.EMAIL_FROM || "artafrik.gallery@gmail.com",
+      to: process.env.EMAIL_TO || "artafrik.gallery@gmail.com",
       subject: `Contact Form: ${validatedData.subject}`,
       text: `
         Name: ${validatedData.name}
@@ -66,7 +66,7 @@ export async function sendContactForm(data: ContactFormData) {
 
     // Send auto-reply to the user
     const autoReplyOptions = {
-      from: process.env.EMAIL_FROM || "info@artsafrik.com",
+      from: process.env.EMAIL_FROM || "artafrik.gallery@gmail.com",
       to: validatedData.email,
       subject: "Thank you for contacting Arts Afrik",
       text: `

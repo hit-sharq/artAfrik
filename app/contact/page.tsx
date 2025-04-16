@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useTransition } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { AnimatePresence, motion } from "framer-motion"
-import MainLayout from "@/components/MainLayout"
+import MainLayout from "../../components/MainLayout"
 import { sendContactForm } from "../actions/contact-actions"
 import { verifyRecaptcha } from "../../lib/recaptcha"
 import "./contact.css"
@@ -296,7 +296,7 @@ export default function Contact() {
                 <div className="detail-item">
                   <strong>Email:</strong>
                   <p>
-                    <a href="mailto:info@artsafrik.com">info@artsafrik.com</a>
+                    <a href="mailto:artafrik.gallery@gmail.com">artafrik.gallery@gmail.com</a>
                   </p>
                 </div>
                 <div className="detail-item">
