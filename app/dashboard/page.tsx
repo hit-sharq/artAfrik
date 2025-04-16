@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useAuth } from "@clerk/nextjs"
-import MainLayout from "@/components/MainLayout"
+import MainLayout from "../../components/MainLayout"
 import "./dashboard.css"
 
 // Mock data for orders
@@ -337,7 +337,7 @@ export default function Dashboard() {
 
                     <div className="form-group">
                       <label htmlFor="size">Size</label>
-                      <input type="text" id="size" name="size" placeholder="e.g., 12&quot; x 6&quot; x 3&quot;" />
+<input type="text" id="size" name="size" placeholder='e.g., 12" x 6" x 3"' />
                     </div>
                   </div>
 
