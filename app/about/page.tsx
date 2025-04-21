@@ -1,7 +1,6 @@
-import Image from "next/image"
-import MainLayout from "@/components/MainLayout"
-import "./about.css"
-import { cloudinaryLoader } from "@/lib/cloudinary"
+import Image from "next/image";
+import MainLayout from "@/components/MainLayout";
+import "./about.css";
 
 export default function About() {
   return (
@@ -31,46 +30,7 @@ export default function About() {
                   alt="Arts Afrik Mission"
                   width={600}
                   height={400}
-                  loader={cloudinaryLoader}
                 />
-              </div>
-            </div>
-          </section>
-
-          <section className="value-section">
-            <h2>Cultural & Artistic Value</h2>
-            <div className="value-grid">
-              <div className="value-card">
-                <h3>Cultural Significance</h3>
-                <p>
-                  Each piece in our collection carries deep cultural significance, often representing spiritual beliefs,
-                  historical events, or social customs. These artworks serve as tangible connections to Africa's rich
-                  and diverse cultural heritage.
-                </p>
-              </div>
-              <div className="value-card">
-                <h3>Artistic Excellence</h3>
-                <p>
-                  African art is renowned for its distinctive aesthetic qualities, innovative techniques, and masterful
-                  craftsmanship. We celebrate the artistic excellence embodied in these traditional forms, from
-                  intricate wood carving to symbolic design elements.
-                </p>
-              </div>
-              <div className="value-card">
-                <h3>Sustainable Practices</h3>
-                <p>
-                  We are committed to ethical sourcing and sustainable practices. Our artworks are created using
-                  responsibly harvested materials, and we ensure fair compensation for the artisans who create these
-                  magnificent pieces.
-                </p>
-              </div>
-              <div className="value-card">
-                <h3>Educational Impact</h3>
-                <p>
-                  Beyond their aesthetic appeal, our art pieces serve an educational purpose, offering insights into
-                  African cultures, traditions, and worldviews. We provide detailed information about each piece's
-                  origin, meaning, and creation process.
-                </p>
               </div>
             </div>
           </section>
@@ -83,7 +43,6 @@ export default function About() {
                   alt="Arts Afrik Sourcing"
                   width={600}
                   height={400}
-                  loader={cloudinaryLoader}
                 />
               </div>
               <div className="sourcing-text">
@@ -117,7 +76,6 @@ export default function About() {
                     alt="Mutuku Moses"
                     fill
                     style={{ objectFit: "contain" }}
-                    loader={cloudinaryLoader}
                   />
                 </div>
                 <h3>Mutuku Moses</h3>
@@ -134,7 +92,6 @@ export default function About() {
                     alt="Joshua Mwendwa"
                     fill
                     style={{ objectFit: "contain" }}
-                    loader={cloudinaryLoader}
                   />
                 </div>
                 <h3>Joshua Mwendwa</h3>
@@ -151,7 +108,6 @@ export default function About() {
                     alt="Lilian Ndanu"
                     fill
                     style={{ objectFit: "contain" }}
-                    loader={cloudinaryLoader}
                   />
                 </div>
                 <h3>Lilian Ndanu</h3>
@@ -169,7 +125,6 @@ export default function About() {
                     alt="Team Member"
                     width={300}
                     height={300}
-                    loader={cloudinaryLoader}
                   />
                 </div>
                 <h3>New Member 1</h3>
@@ -183,7 +138,6 @@ export default function About() {
                     alt="Team Member"
                     width={300}
                     height={300}
-                    loader={cloudinaryLoader}
                   />
                 </div>
                 <h3>New Member 2</h3>
@@ -197,7 +151,6 @@ export default function About() {
                     alt="Team Member"
                     width={300}
                     height={300}
-                    loader={cloudinaryLoader}
                   />
                 </div>
                 <h3>New Member 3</h3>
@@ -211,7 +164,6 @@ export default function About() {
                     alt="Team Member"
                     width={300}
                     height={300}
-                    loader={cloudinaryLoader}
                   />
                 </div>
                 <h3>New Member 4</h3>
@@ -225,7 +177,6 @@ export default function About() {
                     alt="Team Member"
                     width={300}
                     height={300}
-                    loader={cloudinaryLoader}
                   />
                 </div>
                 <h3>New Member 5</h3>
@@ -237,5 +188,5 @@ export default function About() {
         </div>
       </div>
     </MainLayout>
-  )
+  );
 }
