@@ -1,4 +1,3 @@
-
 "use client"
 
 import type React from "react"
@@ -16,7 +15,8 @@ interface ArtListing {
   woodType: string
   region: string
   price: number
-  image: string
+  image?: string
+  images?: string[]
 }
 
 export default function Gallery() {
@@ -53,84 +53,27 @@ export default function Gallery() {
   ]
 
   useEffect(() => {
-    // In a real app, this would be an API call
+    // Fetch art listings from the database
     const fetchArtListings = async () => {
       setIsLoading(true)
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 800))
+        const response = await fetch("/api/art-listings")
+        if (!response.ok) {
+          throw new Error("Failed to fetch art listings")
+        }
+        const data = await response.json()
 
-        // Mock data
-        const mockArtListings = [
-          {
-            id: "1",
-            title: "Traditional Mask",
-            woodType: "Ebony",
-            region: "West Africa",
-            price: 120,
-            image: "/placeholder.svg?height=400&width=300",
-          },
-          {
-            id: "2",
-            title: "Tribal Statue",
-            woodType: "Rosewood",
-            region: "East Africa",
-            price: 150,
-            image: "/placeholder.svg?height=400&width=300",
-          },
-          {
-            id: "3",
-            title: "Animal Figurine",
-            woodType: "Mahogany",
-            region: "Central Africa",
-            price: 85,
-            image: "/placeholder.svg?height=400&width=300",
-          },
-          {
-            id: "4",
-            title: "Decorative Bowl",
-            woodType: "Ebony",
-            region: "Southern Africa",
-            price: 95,
-            image: "/placeholder.svg?height=400&width=300",
-          },
-          {
-            id: "5",
-            title: "Wall Hanging",
-            woodType: "Rosewood",
-            region: "West Africa",
-            price: 110,
-            image: "/placeholder.svg?height=400&width=300",
-          },
-          {
-            id: "6",
-            title: "Ceremonial Staff",
-            woodType: "Mahogany",
-            region: "East Africa",
-            price: 200,
-            image: "/placeholder.svg?height=400&width=300",
-          },
-          {
-            id: "7",
-            title: "Decorative Mask",
-            woodType: "Ebony",
-            region: "Central Africa",
-            price: 130,
-            image: "/placeholder.svg?height=400&width=300",
-          },
-          {
-            id: "8",
-            title: "Tribal Drum",
-            woodType: "Rosewood",
-            region: "Southern Africa",
-            price: 180,
-            image: "/placeholder.svg?height=400&width=300",
-          },
-        ]
+        // Transform data to match expected format if needed
+        const formattedData = data.map((item: ArtListing) => ({
+          ...item,
+          image: item.images?.[0] || "/placeholder.svg?height=400&width=300",
+        }))
 
-        setArtListings(mockArtListings)
+        setArtListings(formattedData)
       } catch (error) {
         console.error("Error fetching art listings:", error)
+        // Fallback to empty array
+        setArtListings([])
       } finally {
         setIsLoading(false)
       }
@@ -166,7 +109,7 @@ export default function Gallery() {
 
     // Apply sorting
     if (filters.sortBy === "newest") {
-      // In a real app, you would sort by createdAt date
+      // In a real app with createdAt dates, you would sort by date
       // Here we just keep the original order
     } else if (filters.sortBy === "oldest") {
       result = [...result].reverse()
@@ -328,7 +271,12 @@ export default function Gallery() {
               {currentItems.map((art) => (
                 <div className={`art-card ${viewMode === "list" ? "list-view" : ""}`} key={art.id}>
                   <div className="art-image">
-                    <Image src={art.image || "/placeholder.svg"} alt={art.title} fill style={{ objectFit: "cover" }} />
+                    <Image
+                      src={art.image || art.images?.[0] || "/placeholder.svg"}
+                      alt={art.title}
+                      fill
+                      style={{ objectFit: "cover" }}
+                    />
                     <div className="art-overlay">
                       <Link href={`/gallery/${art.id}`} className="quick-view">
                         Quick View
@@ -359,15 +307,37 @@ export default function Gallery() {
 
           {/* Pagination Controls */}
           {filteredArt.length > itemsPerPage && (
-            <div className="pagination-controls">
-              <button onClick={handlePrevPage} disabled={currentPage === 1}>
-                Previous
+            <div className="pagination">
+              <button
+                className="pagination-button"
+                onClick={handlePrevPage}
+                disabled={currentPage === 1}
+                aria-label="Previous page"
+              >
+                &lt;
               </button>
-              <span>
-                Page {currentPage} of {Math.ceil(filteredArt.length / itemsPerPage)}
-              </span>
-              <button onClick={handleNextPage} disabled={currentPage === Math.ceil(filteredArt.length / itemsPerPage)}>
-                Next
+              <div className="pagination-pages">
+                {Array.from({ length: Math.min(5, Math.ceil(filteredArt.length / itemsPerPage)) }, (_, i) => {
+                  const pageNumber = i + 1
+                  return (
+                    <button
+                      key={i}
+                      className={`pagination-button ${pageNumber === currentPage ? "active" : ""}`}
+                      onClick={() => setCurrentPage(pageNumber)}
+                    >
+                      {pageNumber}
+                    </button>
+                  )
+                })}
+                {Math.ceil(filteredArt.length / itemsPerPage) > 5 && <span className="pagination-ellipsis">...</span>}
+              </div>
+              <button
+                className="pagination-button"
+                onClick={handleNextPage}
+                disabled={currentPage === Math.ceil(filteredArt.length / itemsPerPage)}
+                aria-label="Next page"
+              >
+                &gt;
               </button>
             </div>
           )}

@@ -34,11 +34,13 @@ export default function Home() {
       try {
         // Fetch categories
         const catRes = await fetch("/api/categories")
+        if (!catRes.ok) throw new Error("Failed to fetch categories")
         const catData = await catRes.json()
         setCategories(catData)
 
         // Fetch featured artworks
         const artRes = await fetch("/api/featured-artworks")
+        if (!artRes.ok) throw new Error("Failed to fetch featured artworks")
         const artData = await artRes.json()
         setFeaturedArtworks(artData)
       } catch (error) {
