@@ -6,6 +6,9 @@ import Link from "next/link"
 import MainLayout from "@/components/MainLayout"
 import "./blog-post.css"
 
+// Import the cloudinaryLoader
+import { cloudinaryLoader } from "@/lib/cloudinary"
+
 // Mock data for blog posts
 const blogPosts = [
   {
@@ -191,7 +194,13 @@ export default function BlogPost() {
             <h1 className="post-title">{post.title}</h1>
             <div className="post-author-brief">
               <div className="author-image">
-                <Image src={post.authorImage || "/placeholder.svg"} alt={post.author} width={50} height={50} />
+                <Image
+                  src={post.authorImage || "/placeholder.svg"}
+                  alt={post.author}
+                  width={50}
+                  height={50}
+                  loader={cloudinaryLoader}
+                />
               </div>
               <div className="author-info">
                 <span className="author-name">By {post.author}</span>
@@ -208,6 +217,7 @@ export default function BlogPost() {
             width={1200}
             height={600}
             className="featured-post-image"
+            loader={cloudinaryLoader}
           />
         </div>
 
@@ -225,7 +235,13 @@ export default function BlogPost() {
 
             <div className="author-bio">
               <div className="author-image">
-                <Image src={post.authorImage || "/placeholder.svg"} alt={post.author} width={80} height={80} />
+                <Image
+                  src={post.authorImage || "/placeholder.svg"}
+                  alt={post.author}
+                  width={80}
+                  height={80}
+                  loader={cloudinaryLoader}
+                />
               </div>
               <div className="author-details">
                 <h3>About {post.author}</h3>
@@ -247,6 +263,7 @@ export default function BlogPost() {
                         alt={relatedPost.title}
                         width={400}
                         height={250}
+                        loader={cloudinaryLoader}
                       />
                     </div>
                     <div className="related-content">

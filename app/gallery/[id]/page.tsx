@@ -8,6 +8,8 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import MainLayout from "../../../components/MainLayout"
 import "./product-detail.css"
+// Import the CloudinaryImage component
+import { cloudinaryLoader, getCloudinaryUrl } from "../../../lib/cloudinary"
 
 interface ArtListing {
   id: string
@@ -213,7 +215,7 @@ export default function ProductDetail() {
                 style={
                   isZoomed
                     ? {
-                        backgroundImage: `url(${art.images[activeImage]})`,
+                        backgroundImage: `url(${getCloudinaryUrl(art.images[activeImage], ["c_fill", "g_auto", "w_1200", "h_800"])})`,
                         backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
                       }
                     : undefined
@@ -226,6 +228,7 @@ export default function ProductDetail() {
                     fill
                     style={{ objectFit: "contain" }}
                     priority
+                    loader={cloudinaryLoader}
                   />
                 )}
                 <div className="zoom-hint">
@@ -244,6 +247,7 @@ export default function ProductDetail() {
                       alt={`${art.title} - View ${index + 1}`}
                       fill
                       style={{ objectFit: "cover" }}
+                      loader={cloudinaryLoader}
                     />
                   </div>
                 ))}

@@ -6,6 +6,9 @@ import Image from "next/image"
 import MainLayout from "@/components/MainLayout"
 import "./blog.css"
 
+// Import the cloudinaryLoader
+import { cloudinaryLoader } from "@/lib/cloudinary"
+
 // Mock data for blog posts
 const blogPosts = [
   {
@@ -120,6 +123,7 @@ export default function Blog() {
                   width={800}
                   height={500}
                   className="featured-img"
+                  loader={cloudinaryLoader}
                 />
                 <div className="featured-badge">Featured</div>
               </div>
@@ -166,7 +170,13 @@ export default function Blog() {
               filteredPosts.map((post) => (
                 <div className="blog-card" key={post.id}>
                   <div className="blog-image">
-                    <Image src={post.image || "/placeholder.svg"} alt={post.title} width={400} height={250} />
+                    <Image
+                      src={post.image || "/placeholder.svg"}
+                      alt={post.title}
+                      width={400}
+                      height={250}
+                      loader={cloudinaryLoader}
+                    />
                   </div>
                   <div className="blog-content">
                     <div className="post-meta">

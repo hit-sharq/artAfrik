@@ -9,6 +9,9 @@ import { useSearchParams } from "next/navigation"
 import MainLayout from "../../components/MainLayout"
 import "./gallery.css"
 
+// Import the cloudinaryLoader
+import { cloudinaryLoader } from "@/lib/cloudinary"
+
 interface ArtListing {
   id: string
   title: string
@@ -276,6 +279,7 @@ export default function Gallery() {
                       alt={art.title}
                       fill
                       style={{ objectFit: "cover" }}
+                      loader={cloudinaryLoader}
                     />
                     <div className="art-overlay">
                       <Link href={`/gallery/${art.id}`} className="quick-view">

@@ -10,6 +10,10 @@ import { useAuth } from "@clerk/nextjs"
 import MainLayout from "@/components/MainLayout"
 import "./order-form.css"
 
+// Update image loading in the order page
+// Import the cloudinaryLoader
+import { cloudinaryLoader } from "@/lib/cloudinary"
+
 // Mock data for art listings
 const mockArtListings = [
   {
@@ -159,7 +163,13 @@ export default function OrderRequest() {
           <div className="order-content">
             <div className="art-preview">
               <div className="art-image">
-                <Image src={art.image || "/placeholder.svg"} alt={art.title} width={300} height={400} />
+                <Image
+                  src={art.image || "/placeholder.svg"}
+                  alt={art.title}
+                  width={300}
+                  height={400}
+                  loader={cloudinaryLoader}
+                />
               </div>
               <div className="art-details">
                 <h2>{art.title}</h2>

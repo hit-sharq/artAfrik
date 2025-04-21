@@ -11,6 +11,9 @@ import { sendContactForm } from "../actions/contact-actions"
 import { verifyRecaptcha } from "../../lib/recaptcha"
 import "./contact.css"
 
+// Import the cloudinaryLoader
+import { cloudinaryLoader } from "@/lib/cloudinary"
+
 // Inquiry types
 const INQUIRY_TYPES = [
   { value: "general", label: "General Inquiry" },
@@ -339,6 +342,7 @@ export default function Contact() {
                             width={400}
                             height={250}
                             style={{ objectFit: "cover" }}
+                            loader={cloudinaryLoader}
                           />
                           <div className="map-overlay">
                             <span className="map-pin">
@@ -534,7 +538,13 @@ export default function Contact() {
                         <div className="recaptcha-checkbox"></div>
                         <span>I'm not a robot</span>
                         <div className="recaptcha-logo">
-                          <Image src="/placeholder.svg?height=40&width=40" alt="reCAPTCHA" width={40} height={40} />
+                          <Image
+                            src="/placeholder.svg?height=40&width=40"
+                            alt="reCAPTCHA"
+                            width={40}
+                            height={40}
+                            loader={cloudinaryLoader}
+                          />
                         </div>
                       </div>
                     </div>

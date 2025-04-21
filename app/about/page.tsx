@@ -1,6 +1,7 @@
 import Image from "next/image"
 import MainLayout from "@/components/MainLayout"
 import "./about.css"
+import { cloudinaryLoader } from "@/lib/cloudinary"
 
 export default function About() {
   return (
@@ -25,7 +26,13 @@ export default function About() {
                 </p>
               </div>
               <div className="mission-image">
-                <Image src="/placeholder.svg?height=400&width=600" alt="Arts Afrik Mission" width={600} height={400} />
+                <Image
+                  src="/placeholder.svg?height=400&width=600"
+                  alt="Arts Afrik Mission"
+                  width={600}
+                  height={400}
+                  loader={cloudinaryLoader}
+                />
               </div>
             </div>
           </section>
@@ -71,7 +78,13 @@ export default function About() {
           <section className="sourcing-section">
             <div className="sourcing-content">
               <div className="sourcing-image">
-                <Image src="/placeholder.svg?height=400&width=600" alt="Arts Afrik Sourcing" width={600} height={400} />
+                <Image
+                  src="/placeholder.svg?height=400&width=600"
+                  alt="Arts Afrik Sourcing"
+                  width={600}
+                  height={400}
+                  loader={cloudinaryLoader}
+                />
               </div>
               <div className="sourcing-text">
                 <h2>How We Source & Represent</h2>
@@ -98,19 +111,31 @@ export default function About() {
             <h2>Our Team</h2>
             <div className="team-grid">
               <div className="team-member">
-                <div className="member-image" style={{ width: 300, height: 300, position: 'relative' }}>
-                  <Image src="/images/musa.JPG" alt="Mutuku Moses" fill style={{ objectFit: 'contain' }} />
+                <div className="member-image" style={{ width: 300, height: 300, position: "relative" }}>
+                  <Image
+                    src="/images/musa.JPG"
+                    alt="Mutuku Moses"
+                    fill
+                    style={{ objectFit: "contain" }}
+                    loader={cloudinaryLoader}
+                  />
                 </div>
                 <h3>Mutuku Moses</h3>
                 <p className="member-title">Founder & Curator</p>
                 <p className="member-bio">
-                  With over 7 years of experience working with African art, Musa founded Arts Afrik to share his
-                  passion for traditional craftsmanship with the world.
+                  With over 7 years of experience working with African art, Musa founded Arts Afrik to share his passion
+                  for traditional craftsmanship with the world.
                 </p>
               </div>
               <div className="team-member">
-                <div className="member-image" style={{ width: 300, height: 300, position: 'relative' }}>
-                  <Image src="/images/7386.jpg" alt="Joshua Mwendwa" fill style={{ objectFit: 'contain' }} />
+                <div className="member-image" style={{ width: 300, height: 300, position: "relative" }}>
+                  <Image
+                    src="/images/7386.jpg"
+                    alt="Joshua Mwendwa"
+                    fill
+                    style={{ objectFit: "contain" }}
+                    loader={cloudinaryLoader}
+                  />
                 </div>
                 <h3>Joshua Mwendwa</h3>
                 <p className="member-title">Artisan Relations</p>
@@ -120,66 +145,92 @@ export default function About() {
                 </p>
               </div>
               <div className="team-member">
-                <div className="member-image" style={{ width: 300, height: 300, position: 'relative' }}>
-                  <Image src="/images/lilian.jpg" alt="Lilian Ndanu" fill style={{ objectFit: 'contain' }} />
+                <div className="member-image" style={{ width: 300, height: 300, position: "relative" }}>
+                  <Image
+                    src="/images/lilian.jpg"
+                    alt="Lilian Ndanu"
+                    fill
+                    style={{ objectFit: "contain" }}
+                    loader={cloudinaryLoader}
+                  />
                 </div>
                 <h3>Lilian Ndanu</h3>
                 <p className="member-title">Cultural Specialist</p>
                 <p className="member-bio">
-                  With a PhD in Arts, Lilian provides expert knowledge on the cultural context and
-                  historical significance of each art piece.
+                  With a PhD in Arts, Lilian provides expert knowledge on the cultural context and historical
+                  significance of each art piece.
                 </p>
               </div>
 
               <div className="team-member">
                 <div className="member-image">
-                  <Image src="/placeholder.svg?height=300&width=300" alt="Team Member" width={300} height={300} />
+                  <Image
+                    src="/placeholder.svg?height=300&width=300"
+                    alt="Team Member"
+                    width={300}
+                    height={300}
+                    loader={cloudinaryLoader}
+                  />
                 </div>
                 <h3>New Member 1</h3>
                 <p className="member-title">Title 1</p>
-                <p className="member-bio">
-                  Bio for new member 1.
-                </p>
+                <p className="member-bio">Bio for new member 1.</p>
               </div>
               <div className="team-member">
                 <div className="member-image">
-                  <Image src="/placeholder.svg?height=300&width=300" alt="Team Member" width={300} height={300} />
+                  <Image
+                    src="/placeholder.svg?height=300&width=300"
+                    alt="Team Member"
+                    width={300}
+                    height={300}
+                    loader={cloudinaryLoader}
+                  />
                 </div>
                 <h3>New Member 2</h3>
                 <p className="member-title">Title 2</p>
-                <p className="member-bio">
-                  Bio for new member 2.
-                </p>
+                <p className="member-bio">Bio for new member 2.</p>
               </div>
               <div className="team-member">
                 <div className="member-image">
-                  <Image src="/placeholder.svg?height=300&width=300" alt="Team Member" width={300} height={300} />
+                  <Image
+                    src="/placeholder.svg?height=300&width=300"
+                    alt="Team Member"
+                    width={300}
+                    height={300}
+                    loader={cloudinaryLoader}
+                  />
                 </div>
                 <h3>New Member 3</h3>
                 <p className="member-title">Title 3</p>
-                <p className="member-bio">
-                  Bio for new member 3.
-                </p>
+                <p className="member-bio">Bio for new member 3.</p>
               </div>
               <div className="team-member">
                 <div className="member-image">
-                  <Image src="/placeholder.svg?height=300&width=300" alt="Team Member" width={300} height={300} />
+                  <Image
+                    src="/placeholder.svg?height=300&width=300"
+                    alt="Team Member"
+                    width={300}
+                    height={300}
+                    loader={cloudinaryLoader}
+                  />
                 </div>
                 <h3>New Member 4</h3>
                 <p className="member-title">Title 4</p>
-                <p className="member-bio">
-                  Bio for new member 4.
-                </p>
+                <p className="member-bio">Bio for new member 4.</p>
               </div>
               <div className="team-member">
                 <div className="member-image">
-                  <Image src="/placeholder.svg?height=300&width=300" alt="Team Member" width={300} height={300} />
+                  <Image
+                    src="/placeholder.svg?height=300&width=300"
+                    alt="Team Member"
+                    width={300}
+                    height={300}
+                    loader={cloudinaryLoader}
+                  />
                 </div>
                 <h3>New Member 5</h3>
                 <p className="member-title">Title 5</p>
-                <p className="member-bio">
-                  Bio for new member 5.
-                </p>
+                <p className="member-bio">Bio for new member 5.</p>
               </div>
             </div>
           </section>

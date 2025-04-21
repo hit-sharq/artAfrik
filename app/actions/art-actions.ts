@@ -17,6 +17,7 @@ async function isAdmin() {
   return true
 }
 
+// In the createArtListing function, update how we handle images
 export async function createArtListing(formData: FormData) {
   if (!(await isAdmin())) {
     return {
@@ -34,15 +35,59 @@ export async function createArtListing(formData: FormData) {
     const size = formData.get("size") as string
     const featured = formData.get("featured") === "on"
 
-    // In a real app, you would handle image uploads here
-    const images = ["/placeholder.svg?height=400&width=300"]
-
     // Validate required fields
     if (!title || !description || !woodType || !region || isNaN(price) || !size) {
       return {
         success: false,
         message: "Please fill in all required fields",
       }
+    }
+
+    // Get the uploaded images from the form
+    const uploadedImages = formData.getAll("images") as File[]
+    let images: string[] = []
+
+    // If we have uploaded images, process them
+    if (
+      uploadedImages &&
+      uploadedImages.length > 0 &&
+      uploadedImages[0] instanceof File &&
+      uploadedImages[0].size > 0
+    ) {
+      // For demonstration, log the image details
+      console.log(`Processing ${uploadedImages.length} images`)
+
+      // In a real implementation, you would upload each image to Cloudinary
+      // For now, we'll use placeholder images
+      images = uploadedImages.map(
+        (_, index) => `arts_afrik/${woodType.toLowerCase()}/${title.toLowerCase().replace(/\s+/g, "-")}-${index + 1}`,
+      )
+
+      // Note: In a production environment, you would use the Cloudinary API to upload images
+      // Example:
+      /*
+      const uploadPromises = uploadedImages.map(async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
+        
+        const response = await fetch(
+          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+          {
+            method: 'POST',
+            body: formData,
+          }
+        );
+        
+        const data = await response.json();
+        return data.public_id; // Return the Cloudinary public_id
+      });
+      
+      images = await Promise.all(uploadPromises);
+      */
+    } else {
+      // Use default placeholder if no images were uploaded
+      images = [`arts_afrik/${woodType.toLowerCase()}/placeholder-${Date.now()}`]
     }
 
     // Create the art listing in the database

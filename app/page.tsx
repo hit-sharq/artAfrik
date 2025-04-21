@@ -5,6 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import MainLayout from "../components/MainLayout"
 import "./home.css"
+import { cloudinaryLoader } from "../lib/cloudinary"
 
 interface Category {
   name: string
@@ -158,6 +159,7 @@ export default function Home() {
                       fill
                       style={{ objectFit: "cover" }}
                       priority={true}
+                      loader={cloudinaryLoader} // Added cloudinary loader
                     />
                   </div>
                   <h3>{category.name}</h3>
@@ -207,6 +209,7 @@ export default function Home() {
                       fill
                       style={{ objectFit: "cover" }}
                       priority={true}
+                      loader={cloudinaryLoader} // Added cloudinary loader
                     />
                   </div>
                   <div className="art-info">
@@ -247,7 +250,13 @@ export default function Home() {
               </Link>
             </div>
             <div className="about-preview-image">
-              <Image src="/images/about art artafriks.jpg" alt="African Artisan at Work" width={600} height={400} />
+              <Image
+                src="/images/about art artafriks.jpg"
+                alt="African Artisan at Work"
+                width={600}
+                height={400}
+                loader={cloudinaryLoader} // Added cloudinary loader
+              />
             </div>
           </div>
         </div>

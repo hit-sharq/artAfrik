@@ -1,11 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import type React from "react"
+
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useAuth } from "@clerk/nextjs"
 import MainLayout from "../../components/MainLayout"
 import "./dashboard.css"
+
+// Define a type for the active tab to ensure type safety
+type ActiveTabType = "orders" | "art" | "upload"
 
 // Mock data for orders
 const mockOrders = [
@@ -96,15 +101,24 @@ const mockArtListings = [
   },
 ]
 
+// Define a new interface for the file uploads with preview
+interface FileWithPreview extends File {
+  preview?: string
+}
+
 export default function Dashboard() {
   const { isSignedIn, isLoaded } = useAuth()
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [activeTab, setActiveTab] = useState("orders")
+  // Use the defined type for activeTab
+  const [activeTab, setActiveTab] = useState<ActiveTabType>("orders")
   const [orders, setOrders] = useState(mockOrders)
   const [artListings, setArtListings] = useState(mockArtListings)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>([])
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     async function checkAdminStatus() {
@@ -134,6 +148,42 @@ export default function Dashboard() {
     }
   }, [isLoading, isSignedIn, isAdmin, router])
 
+  // Add the file upload handler
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files) as FileWithPreview[]
+
+      // Create preview URLs for display
+      newFiles.forEach((file) => {
+        file.preview = URL.createObjectURL(file)
+      })
+
+      setUploadedFiles(newFiles)
+    }
+  }
+
+  // Add a function to remove a file from the upload list
+  const removeFile = (index: number) => {
+    setUploadedFiles((prev) => {
+      const newFiles = [...prev]
+      // Revoke the object URL to avoid memory leaks
+      if (newFiles[index].preview) {
+        URL.revokeObjectURL(newFiles[index].preview!)
+      }
+      newFiles.splice(index, 1)
+      return newFiles
+    })
+  }
+
+  // Clean up object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      uploadedFiles.forEach((file) => {
+        if (file.preview) URL.revokeObjectURL(file.preview)
+      })
+    }
+  }, [uploadedFiles])
+
   if (isLoading || !isSignedIn || !isAdmin) {
     return (
       <MainLayout>
@@ -159,6 +209,143 @@ export default function Dashboard() {
     )
   }
 
+  if (activeTab === "upload") {
+    return (
+      <MainLayout>
+        <div className="dashboard-page">
+          <div className="container">
+            <h1 className="page-title">Admin Dashboard</h1>
+
+            <div className="dashboard-tabs">
+              <button
+                className={`tab-button ${activeTab === ("orders" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("orders")}
+              >
+                Order Requests
+              </button>
+              <button
+                className={`tab-button ${activeTab === ("art" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("art")}
+              >
+                Art Listings
+              </button>
+              <button
+                className={`tab-button ${activeTab === "upload" ? "active" : ""}`}
+                onClick={() => setActiveTab("upload")}
+              >
+                Upload New Art
+              </button>
+            </div>
+
+            <div className="dashboard-content">
+              <div className="upload-tab">
+                <h2>Upload New Art</h2>
+
+                <form className="upload-form">
+                  <div className="form-group">
+                    <label htmlFor="title">Art Title</label>
+                    <input type="text" id="title" name="title" />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="description">Description</label>
+                    <textarea id="description" name="description" rows={5}></textarea>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="woodType">Wood Type</label>
+                      <select id="woodType" name="woodType">
+                        <option value="">Select Wood Type</option>
+                        <option value="Ebony">Ebony</option>
+                        <option value="Rosewood">Rosewood</option>
+                        <option value="Mahogany">Mahogany</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="region">Region</label>
+                      <select id="region" name="region">
+                        <option value="">Select Region</option>
+                        <option value="West Africa">West Africa</option>
+                        <option value="East Africa">East Africa</option>
+                        <option value="Central Africa">Central Africa</option>
+                        <option value="Southern Africa">Southern Africa</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="price">Price ($)</label>
+                      <input type="number" id="price" name="price" min="0" step="0.01" />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="size">Size</label>
+                      <input type="text" id="size" name="size" placeholder='e.g., 12" x 6" x 3"' />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="images">Upload Images</label>
+                    <input
+                      type="file"
+                      id="images"
+                      name="images"
+                      multiple
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      ref={fileInputRef}
+                    />
+                    <p className="help-text">
+                      You can upload multiple images. First image will be the main display image.
+                    </p>
+
+                    {/* Preview uploaded images */}
+                    {uploadedFiles.length > 0 && (
+                      <div className="image-previews">
+                        <h4>Selected Images:</h4>
+                        <div className="preview-grid">
+                          {uploadedFiles.map((file, index) => (
+                            <div key={index} className="preview-item">
+                              <div className="preview-image">
+                                <Image
+                                  src={file.preview || "/placeholder.svg"}
+                                  alt={`Preview ${index + 1}`}
+                                  width={100}
+                                  height={100}
+                                />
+                              </div>
+                              <button type="button" className="remove-image" onClick={() => removeFile(index)}>
+                                ✕
+                              </button>
+                              <p className="image-name">{file.name}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="form-group checkbox-group">
+                    <input type="checkbox" id="featured" name="featured" />
+                    <label htmlFor="featured">Feature this art piece on the home page</label>
+                  </div>
+
+                  <button type="submit" className="button submit-button" disabled={uploading}>
+                    {uploading ? "Uploading..." : "Upload Art Listing"}
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
+
   return (
     <MainLayout>
       <div className="dashboard-page">
@@ -176,8 +363,8 @@ export default function Dashboard() {
               Art Listings
             </button>
             <button
-              className={`tab-button ${activeTab === "upload" ? "active" : ""}`}
-              onClick={() => setActiveTab("upload")}
+              className={`tab-button ${activeTab === ("upload" as ActiveTabType) ? "active" : ""}`}
+              onClick={() => setActiveTab("upload" as ActiveTabType)}
             >
               Upload New Art
             </button>
@@ -287,77 +474,6 @@ export default function Dashboard() {
                     </tbody>
                   </table>
                 </div>
-              </div>
-            )}
-
-            {activeTab === "upload" && (
-              <div className="upload-tab">
-                <h2>Upload New Art</h2>
-
-                <form className="upload-form">
-                  <div className="form-group">
-                    <label htmlFor="title">Art Title</label>
-                    <input type="text" id="title" name="title" />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="description">Description</label>
-                    <textarea id="description" name="description" rows={5}></textarea>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="woodType">Wood Type</label>
-                      <select id="woodType" name="woodType">
-                        <option value="">Select Wood Type</option>
-                        <option value="Ebony">Ebony</option>
-                        <option value="Rosewood">Rosewood</option>
-                        <option value="Mahogany">Mahogany</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="region">Region</label>
-                      <select id="region" name="region">
-                        <option value="">Select Region</option>
-                        <option value="West Africa">West Africa</option>
-                        <option value="East Africa">East Africa</option>
-                        <option value="Central Africa">Central Africa</option>
-                        <option value="Southern Africa">Southern Africa</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="price">Price ($)</label>
-                      <input type="number" id="price" name="price" min="0" step="0.01" />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="size">Size</label>
-<input type="text" id="size" name="size" placeholder='e.g., 12" x 6" x 3"' />
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="images">Upload Images</label>
-                    <input type="file" id="images" name="images" multiple accept="image/*" />
-                    <p className="help-text">
-                      You can upload multiple images. First image will be the main display image.
-                    </p>
-                  </div>
-
-                  <div className="form-group checkbox-group">
-                    <input type="checkbox" id="featured" name="featured" />
-                    <label htmlFor="featured">Feature this art piece on the home page</label>
-                  </div>
-
-                  <button type="submit" className="button submit-button">
-                    Upload Art Listing
-                  </button>
-                </form>
               </div>
             )}
           </div>
