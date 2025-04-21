@@ -56,6 +56,16 @@ async function main() {
     },
   })
 
+  // Create another admin user if not exists
+  await prisma.user.upsert({
+    where: { clerkId: "user_2w2Wa9Cfm4zh2ylxrBIjKDmsbyb" },
+    update: {},
+    create: {
+      clerkId: "user_2w2Wa9Cfm4zh2ylxrBIjKDmsbyb",
+      role: "admin",
+    },
+  })
+
   console.log("Database has been seeded!")
 }
 
