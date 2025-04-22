@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server"
 import { prisma } from "../../../lib/prisma"
 
@@ -11,7 +10,17 @@ export async function GET() {
       },
     })
 
-    const formattedCategories = categories.map((cat) => ({
+    interface Category {
+      woodType: string;
+    }
+
+    interface FormattedCategory {
+      name: string;
+      description: string;
+      image: string;
+    }
+
+    const formattedCategories: FormattedCategory[] = categories.map((cat: Category) => ({
       name: cat.woodType,
       description: getCategoryDescription(cat.woodType),
       image: getCategoryImage(cat.woodType),

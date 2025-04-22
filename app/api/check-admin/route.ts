@@ -9,6 +9,15 @@ export async function GET() {
     // Log the current user ID for debugging
     console.log("Current Clerk user ID:", userId)
 
+    // If no user is authenticated, return early
+    if (!userId) {
+      return NextResponse.json({
+        isAdmin: false,
+        userId: null,
+        message: "No authenticated user",
+      })
+    }
+
     const adminStatus = await isAdmin()
 
     // Log the result of the admin check

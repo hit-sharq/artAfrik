@@ -46,14 +46,24 @@ export default function NewBlogPost() {
   // Check if user is admin
   useEffect(() => {
     async function checkAdmin() {
-      const adminStatus = await isAdmin()
-      setIsAuthorized(adminStatus)
-      if (!adminStatus) {
+      try {
+        const response = await fetch("/api/check-admin")
+        const data = await response.json()
+        if (data.isAdmin) {
+          setIsAuthorized(true)
+        } else {
+          setIsAuthorized(false)
+          router.push("/dashboard")
+        }
+      } catch (error) {
+        console.error("Failed to check admin status:", error)
+        setIsAuthorized(false)
         router.push("/dashboard")
       }
     }
     checkAdmin()
   }, [router])
+  
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
