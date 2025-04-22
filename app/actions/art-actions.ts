@@ -1,23 +1,8 @@
 "use server"
-
-import { auth } from "@clerk/nextjs/server"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import { isAdmin } from "@/lib/auth"
 
-// Function to check if user is admin
-async function isAdmin() {
-  const { userId } = await auth()
-
-  if (!userId) {
-    return false
-  }
-
-  // In a real app, you would check if the user has admin role
-  // For now, we'll assume the authenticated user is an admin
-  return true
-}
-
-// In the createArtListing function, update how we handle images
 export async function createArtListing(formData: FormData) {
   if (!(await isAdmin())) {
     return {
@@ -60,34 +45,13 @@ export async function createArtListing(formData: FormData) {
       // In a real implementation, you would upload each image to Cloudinary
       // For now, we'll use placeholder images
       images = uploadedImages.map(
-        (_, index) => `arts_afrik/${woodType.toLowerCase()}/${title.toLowerCase().replace(/\s+/g, "-")}-${index + 1}`,
+        (_, index) => `/placeholder.svg?height=600&width=400&text=${encodeURIComponent(title)}-${index + 1}`,
       )
 
       // Note: In a production environment, you would use the Cloudinary API to upload images
-      // Example:
-      /*
-      const uploadPromises = uploadedImages.map(async (file) => {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
-        
-        const response = await fetch(
-          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-          {
-            method: 'POST',
-            body: formData,
-          }
-        );
-        
-        const data = await response.json();
-        return data.public_id; // Return the Cloudinary public_id
-      });
-      
-      images = await Promise.all(uploadPromises);
-      */
     } else {
       // Use default placeholder if no images were uploaded
-      images = [`arts_afrik/${woodType.toLowerCase()}/placeholder-${Date.now()}`]
+      images = [`/placeholder.svg?height=600&width=400&text=${encodeURIComponent(title)}`]
     }
 
     // Create the art listing in the database
@@ -107,6 +71,7 @@ export async function createArtListing(formData: FormData) {
     // Make sure to revalidate both the gallery and home pages
     revalidatePath("/gallery")
     revalidatePath("/")
+    revalidatePath("/dashboard")
 
     return {
       success: true,
@@ -165,6 +130,7 @@ export async function updateArtListing(formData: FormData) {
     revalidatePath("/gallery")
     revalidatePath(`/gallery/${id}`)
     revalidatePath("/")
+    revalidatePath("/dashboard")
 
     return {
       success: true,
@@ -210,6 +176,7 @@ export async function toggleFeatured(id: string) {
 
     revalidatePath("/gallery")
     revalidatePath("/")
+    revalidatePath("/dashboard")
 
     return {
       success: true,
@@ -223,6 +190,7 @@ export async function toggleFeatured(id: string) {
     }
   }
 }
+
 export async function deleteArtListing(id: string) {
   if (!(await isAdmin())) {
     return {
@@ -232,13 +200,26 @@ export async function deleteArtListing(id: string) {
   }
 
   try {
-    // Delete the art listing from the database
+    // Check if the art listing exists
+    const artListing = await prisma.artListing.findUnique({
+      where: { id },
+    })
+
+    if (!artListing) {
+      return {
+        success: false,
+        message: "Art listing not found",
+      }
+    }
+
+    // Delete the art listing
     await prisma.artListing.delete({
       where: { id },
     })
 
     revalidatePath("/gallery")
     revalidatePath("/")
+    revalidatePath("/dashboard")
 
     return {
       success: true,
@@ -252,3 +233,4 @@ export async function deleteArtListing(id: string) {
     }
   }
 }
+``

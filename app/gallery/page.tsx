@@ -7,6 +7,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useSearchParams } from "next/navigation"
 import MainLayout from "../../components/MainLayout"
+import QuickViewModal from "../../components/QuickViewModal"
 import "./gallery.css"
 
 // Import the cloudinaryLoader
@@ -38,6 +39,10 @@ export default function Gallery() {
   const [filteredArt, setFilteredArt] = useState<ArtListing[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+
+  // Quick view modal state
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedArtId, setSelectedArtId] = useState("")
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -169,6 +174,17 @@ export default function Gallery() {
     setViewMode((prev) => (prev === "grid" ? "list" : "grid"))
   }
 
+  // Quick view handlers
+  const openQuickView = (artId: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    setSelectedArtId(artId)
+    setIsModalOpen(true)
+  }
+
+  const closeQuickView = () => {
+    setIsModalOpen(false)
+  }
+
   return (
     <MainLayout>
       <div className="gallery-page">
@@ -282,9 +298,9 @@ export default function Gallery() {
                       loader={cloudinaryLoader}
                     />
                     <div className="art-overlay">
-                      <Link href={`/gallery/${art.id}`} className="quick-view">
+                      <a href="#" className="quick-view" onClick={(e) => openQuickView(art.id, e)}>
                         Quick View
-                      </Link>
+                      </a>
                     </div>
                   </div>
                   <div className="art-info">
@@ -347,6 +363,9 @@ export default function Gallery() {
           )}
         </div>
       </div>
+
+      {/* Quick View Modal */}
+      <QuickViewModal isOpen={isModalOpen} onClose={closeQuickView} artId={selectedArtId} />
     </MainLayout>
   )
 }

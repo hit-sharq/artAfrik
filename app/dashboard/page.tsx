@@ -7,102 +7,46 @@ import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useAuth } from "@clerk/nextjs"
 import MainLayout from "../../components/MainLayout"
+import EditArtModal from "../../components/EditArtModal"
 import "./dashboard.css"
 
 // Add this near the top of the file with other imports
-import { createArtListing } from "../actions/art-actions"
+import { createArtListing, toggleFeatured, deleteArtListing } from "../actions/art-actions"
+import { cloudinaryLoader } from "@/lib/cloudinary"
 
 // Define a type for the active tab to ensure type safety
-type ActiveTabType = "orders" | "art" | "upload"
+type ActiveTabType = "orders" | "art" | "upload" | "blog"
 
-// Mock data for orders
-const mockOrders = [
-  {
-    id: "1",
-    name: "John Smith",
-    email: "john@example.com",
-    location: "New York, USA",
-    artTitle: "Traditional Mask",
-    status: "pending",
-    date: "2023-05-15",
-  },
-  {
-    id: "2",
-    name: "Sarah Johnson",
-    email: "sarah@example.com",
-    location: "London, UK",
-    artTitle: "Tribal Statue",
-    status: "approved",
-    date: "2023-05-12",
-  },
-  {
-    id: "3",
-    name: "Michael Brown",
-    email: "michael@example.com",
-    location: "Toronto, Canada",
-    artTitle: "Animal Figurine",
-    status: "shipped",
-    date: "2023-05-10",
-  },
-  {
-    id: "4",
-    name: "Emma Wilson",
-    email: "emma@example.com",
-    location: "Sydney, Australia",
-    artTitle: "Decorative Bowl",
-    status: "delivered",
-    date: "2023-05-05",
-  },
-  {
-    id: "5",
-    name: "David Lee",
-    email: "david@example.com",
-    location: "Berlin, Germany",
-    artTitle: "Wall Hanging",
-    status: "pending",
-    date: "2023-05-18",
-  },
-]
+interface ArtListing {
+  id: string
+  title: string
+  woodType: string
+  region: string
+  price: number
+  featured: boolean
+  image?: string
+  images?: string[]
+}
 
-// Mock data for art listings
-const mockArtListings = [
-  {
-    id: "1",
-    title: "Traditional Mask",
-    woodType: "Ebony",
-    region: "West Africa",
-    price: 120,
-    featured: true,
-    image: "/placeholder.svg?height=100&width=100",
-  },
-  {
-    id: "2",
-    title: "Tribal Statue",
-    woodType: "Rosewood",
-    region: "East Africa",
-    price: 150,
-    featured: false,
-    image: "/placeholder.svg?height=100&width=100",
-  },
-  {
-    id: "3",
-    title: "Animal Figurine",
-    woodType: "Mahogany",
-    region: "Central Africa",
-    price: 85,
-    featured: true,
-    image: "/placeholder.svg?height=100&width=100",
-  },
-  {
-    id: "4",
-    title: "Decorative Bowl",
-    woodType: "Ebony",
-    region: "Southern Africa",
-    price: 95,
-    featured: false,
-    image: "/placeholder.svg?height=100&width=100",
-  },
-]
+interface Order {
+  id: string
+  name: string
+  email: string
+  location: string
+  artTitle: string
+  status: string
+  date: string
+}
+
+interface BlogPost {
+  id: string
+  title: string
+  slug: string
+  excerpt: string
+  category: string
+  author: string
+  date: string
+}
 
 // Define a new interface for the file uploads with preview
 interface FileWithPreview extends File {
@@ -116,12 +60,17 @@ export default function Dashboard() {
 
   // Use the defined type for activeTab
   const [activeTab, setActiveTab] = useState<ActiveTabType>("orders")
-  const [orders, setOrders] = useState(mockOrders)
-  const [artListings, setArtListings] = useState(mockArtListings)
+  const [orders, setOrders] = useState<Order[]>([])
+  const [artListings, setArtListings] = useState<ArtListing[]>([])
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
   const [isAdmin, setIsAdmin] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>([])
   const [uploading, setUploading] = useState(false)
+
+  // Edit modal state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [selectedArtId, setSelectedArtId] = useState("")
 
   useEffect(() => {
     async function checkAdminStatus() {
@@ -145,6 +94,187 @@ export default function Dashboard() {
 
     checkAdminStatus()
   }, [isLoaded, isSignedIn])
+
+  // Fetch data when tab changes
+  useEffect(() => {
+    if (isAdmin) {
+      if (activeTab === "orders") {
+        fetchOrders()
+      } else if (activeTab === "art") {
+        fetchArtListings()
+      } else if (activeTab === "blog") {
+        fetchBlogPosts()
+      }
+    }
+  }, [activeTab, isAdmin])
+
+  // Fetch orders
+  const fetchOrders = async () => {
+    try {
+      const response = await fetch("/api/order-requests")
+      if (response.ok) {
+        const data = await response.json()
+        setOrders(data.orders || [])
+      } else {
+        console.error("Failed to fetch orders")
+        // Fallback to mock data for demo
+        setOrders([
+          {
+            id: "1",
+            name: "John Smith",
+            email: "john@example.com",
+            location: "New York, USA",
+            artTitle: "Traditional Mask",
+            status: "pending",
+            date: "2023-05-15",
+          },
+          {
+            id: "2",
+            name: "Sarah Johnson",
+            email: "sarah@example.com",
+            location: "London, UK",
+            artTitle: "Tribal Statue",
+            status: "approved",
+            date: "2023-05-12",
+          },
+          {
+            id: "3",
+            name: "Michael Brown",
+            email: "michael@example.com",
+            location: "Toronto, Canada",
+            artTitle: "Animal Figurine",
+            status: "shipped",
+            date: "2023-05-10",
+          },
+        ])
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error)
+      // Fallback to mock data
+      setOrders([
+        {
+          id: "1",
+          name: "John Smith",
+          email: "john@example.com",
+          location: "New York, USA",
+          artTitle: "Traditional Mask",
+          status: "pending",
+          date: "2023-05-15",
+        },
+        {
+          id: "2",
+          name: "Sarah Johnson",
+          email: "sarah@example.com",
+          location: "London, UK",
+          artTitle: "Tribal Statue",
+          status: "approved",
+          date: "2023-05-12",
+        },
+      ])
+    }
+  }
+
+  // Fetch art listings
+  const fetchArtListings = async () => {
+    try {
+      const response = await fetch("/api/art-listings")
+      if (response.ok) {
+        const data = await response.json()
+        const formattedData = data.map((item: ArtListing) => ({
+          ...item,
+          image: item.images?.[0] || "/placeholder.svg?height=100&width=100",
+        }))
+        setArtListings(formattedData)
+      } else {
+        console.error("Failed to fetch art listings")
+        // Fallback to mock data
+        setArtListings([
+          {
+            id: "1",
+            title: "Traditional Mask",
+            woodType: "Ebony",
+            region: "West Africa",
+            price: 120,
+            featured: true,
+            image: "/placeholder.svg?height=100&width=100",
+          },
+          {
+            id: "2",
+            title: "Tribal Statue",
+            woodType: "Rosewood",
+            region: "East Africa",
+            price: 150,
+            featured: false,
+            image: "/placeholder.svg?height=100&width=100",
+          },
+        ])
+      }
+    } catch (error) {
+      console.error("Error fetching art listings:", error)
+      // Fallback to mock data
+      setArtListings([
+        {
+          id: "1",
+          title: "Traditional Mask",
+          woodType: "Ebony",
+          region: "West Africa",
+          price: 120,
+          featured: true,
+          image: "/placeholder.svg?height=100&width=100",
+        },
+      ])
+    }
+  }
+
+  // Fetch blog posts
+  const fetchBlogPosts = async () => {
+    try {
+      const response = await fetch("/api/blog-posts")
+      if (response.ok) {
+        const data = await response.json()
+        setBlogPosts(data)
+      } else {
+        console.error("Failed to fetch blog posts")
+        // Fallback to mock data
+        setBlogPosts([
+          {
+            id: "1",
+            title: "The Rich History of West African Masks",
+            slug: "west-african-masks-history",
+            excerpt:
+              "Explore the cultural significance and artistic traditions behind West African ceremonial masks...",
+            category: "Art History",
+            author: "Lilian Ndanu",
+            date: "April 15, 2025",
+          },
+          {
+            id: "2",
+            title: "Sustainable Wood Sourcing in African Art",
+            slug: "sustainable-wood-sourcing",
+            excerpt:
+              "Learn about how modern African artisans are balancing traditional craftsmanship with sustainable practices...",
+            category: "Sustainability",
+            author: "Joshua Mwendwa",
+            date: "April 10, 2025",
+          },
+        ])
+      }
+    } catch (error) {
+      console.error("Error fetching blog posts:", error)
+      // Fallback to mock data
+      setBlogPosts([
+        {
+          id: "1",
+          title: "The Rich History of West African Masks",
+          slug: "west-african-masks-history",
+          excerpt: "Explore the cultural significance and artistic traditions behind West African ceremonial masks...",
+          category: "Art History",
+          author: "Lilian Ndanu",
+          date: "April 15, 2025",
+        },
+      ])
+    }
+  }
 
   // Redirect if not signed in or not an admin
   useEffect(() => {
@@ -202,26 +332,79 @@ export default function Dashboard() {
     )
   }
 
-  const handleStatusChange = (orderId: string, newStatus: string) => {
-    setOrders((prevOrders) =>
-      prevOrders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)),
-    )
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/order-requests/${orderId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
+
+      if (response.ok) {
+        // Update the local state
+        setOrders((prevOrders) =>
+          prevOrders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)),
+        )
+      } else {
+        console.error("Failed to update order status")
+      }
+    } catch (error) {
+      console.error("Error updating order status:", error)
+    }
   }
 
-  const handleToggleFeatured = (artId: string) => {
-    setArtListings((prevListings) =>
-      prevListings.map((art) => (art.id === artId ? { ...art, featured: !art.featured } : art)),
-    )
+  const handleToggleFeatured = async (artId: string) => {
+    try {
+      const result = await toggleFeatured(artId)
+
+      if (result.success) {
+        // Update the local state
+        setArtListings((prevListings) =>
+          prevListings.map((art) => (art.id === artId ? { ...art, featured: !art.featured } : art)),
+        )
+      } else {
+        console.error("Failed to toggle featured status:", result.message)
+      }
+    } catch (error) {
+      console.error("Error toggling featured status:", error)
+    }
+  }
+
+  const handleDeleteArt = async (artId: string) => {
+    if (window.confirm("Are you sure you want to delete this art listing? This action cannot be undone.")) {
+      try {
+        const result = await deleteArtListing(artId)
+
+        if (result.success) {
+          // Remove from local state
+          setArtListings((prevListings) => prevListings.filter((art) => art.id !== artId))
+        } else {
+          console.error("Failed to delete art listing:", result.message)
+        }
+      } catch (error) {
+        console.error("Error deleting art listing:", error)
+      }
+    }
+  }
+
+  const handleEditArt = (artId: string) => {
+    setSelectedArtId(artId)
+    setIsEditModalOpen(true)
+  }
+
+  const handleEditSuccess = () => {
+    // Refresh the art listings
+    fetchArtListings()
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setUploading(true)
 
-    const form = e.currentTarget
-
     try {
-      const formData = new FormData(form)
+      const formData = new FormData(e.currentTarget)
 
       // Add the uploaded files to the form data
       if (uploadedFiles.length > 0) {
@@ -239,16 +422,18 @@ export default function Dashboard() {
       if (result.success) {
         alert(result.message)
         // Clear the form
-        form.reset()
+        e.currentTarget.reset()
         setUploadedFiles([])
-        // Refresh the router to update gallery page
-        router.refresh()
+
+        // Switch to the art tab to show the new listing
+        setActiveTab("art")
+        fetchArtListings()
       } else {
         alert(result.message)
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error uploading art:", error)
-      alert(`There was an error uploading the art: ${error?.message || error}`)
+      alert("There was an error uploading the art. Please try again.")
     } finally {
       setUploading(false)
     }
@@ -275,10 +460,16 @@ export default function Dashboard() {
                 Art Listings
               </button>
               <button
-                className={`tab-button ${activeTab === "upload" ? "active" : ""}`}
+                className={`tab-button ${activeTab === ("upload" as ActiveTabType) ? "active" : ""}`}
                 onClick={() => setActiveTab("upload")}
               >
                 Upload New Art
+              </button>
+              <button
+                className={`tab-button ${activeTab === ("blog" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("blog")}
+              >
+                Blog Management
               </button>
             </div>
 
@@ -289,18 +480,18 @@ export default function Dashboard() {
                 <form className="upload-form" onSubmit={handleSubmit}>
                   <div className="form-group">
                     <label htmlFor="title">Art Title</label>
-                    <input type="text" id="title" name="title" />
+                    <input type="text" id="title" name="title" required />
                   </div>
 
                   <div className="form-group">
                     <label htmlFor="description">Description</label>
-                    <textarea id="description" name="description" rows={5}></textarea>
+                    <textarea id="description" name="description" rows={5} required></textarea>
                   </div>
 
                   <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="woodType">Wood Type</label>
-                      <select id="woodType" name="woodType">
+                      <select id="woodType" name="woodType" required>
                         <option value="">Select Wood Type</option>
                         <option value="Ebony">Ebony</option>
                         <option value="Rosewood">Rosewood</option>
@@ -311,7 +502,7 @@ export default function Dashboard() {
 
                     <div className="form-group">
                       <label htmlFor="region">Region</label>
-                      <select id="region" name="region">
+                      <select id="region" name="region" required>
                         <option value="">Select Region</option>
                         <option value="West Africa">West Africa</option>
                         <option value="East Africa">East Africa</option>
@@ -324,12 +515,12 @@ export default function Dashboard() {
                   <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="price">Price ($)</label>
-                      <input type="number" id="price" name="price" min="0" step="0.01" />
+                      <input type="number" id="price" name="price" min="0" step="0.01" required />
                     </div>
 
                     <div className="form-group">
                       <label htmlFor="size">Size</label>
-                      <input type="text" id="size" name="size" placeholder='e.g., 12" x 6" x 3"' />
+                      <input type="text" id="size" name="size" placeholder='e.g., 12" x 6" x 3"' required />
                     </div>
                   </div>
 
@@ -391,6 +582,104 @@ export default function Dashboard() {
     )
   }
 
+  if (activeTab === "blog") {
+    return (
+      <MainLayout>
+        <div className="dashboard-page">
+          <div className="container">
+            <h1 className="page-title">Admin Dashboard</h1>
+
+            <div className="dashboard-tabs">
+              <button
+                className={`tab-button ${activeTab === ("orders" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("orders")}
+              >
+                Order Requests
+              </button>
+              <button
+                className={`tab-button ${activeTab === ("art" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("art")}
+              >
+                Art Listings
+              </button>
+              <button
+                className={`tab-button ${activeTab === ("upload" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("upload")}
+              >
+                Upload New Art
+              </button>
+              <button
+                className={`tab-button ${activeTab === ("blog" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("blog")}
+              >
+                Blog Management
+              </button>
+            </div>
+
+            <div className="dashboard-content">
+              <div className="blog-tab">
+                <h2>Blog Posts</h2>
+
+                <div className="blog-actions">
+                  <button className="button" onClick={() => router.push("/dashboard/blog/new")}>
+                    Create New Blog Post
+                  </button>
+                </div>
+
+                <div className="blog-table-container">
+                  <table className="blog-table">
+                    <thead>
+                      <tr>
+                        <th>Title</th>
+                        <th>Excerpt</th>
+                        <th>Category</th>
+                        <th>Author</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {blogPosts.map((post) => (
+                        <tr key={post.id}>
+                          <td className="blog-title">{post.title}</td>
+                          <td className="blog-excerpt">{post.excerpt}</td>
+                          <td className="blog-category">{post.category}</td>
+                          <td>{post.author}</td>
+                          <td className="blog-date">{post.date}</td>
+                          <td>
+                            <div className="art-actions">
+                              <button
+                                className="action-button edit"
+                                onClick={() => router.push(`/dashboard/blog/edit/${post.id}`)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="action-button delete"
+                                onClick={() => {
+                                  if (window.confirm("Are you sure you want to delete this blog post?")) {
+                                    // Delete blog post logic
+                                    console.log("Delete blog post:", post.id)
+                                  }
+                                }}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
+
   return (
     <MainLayout>
       <div className="dashboard-page">
@@ -409,9 +698,15 @@ export default function Dashboard() {
             </button>
             <button
               className={`tab-button ${activeTab === ("upload" as ActiveTabType) ? "active" : ""}`}
-              onClick={() => setActiveTab("upload" as ActiveTabType)}
+              onClick={() => setActiveTab("upload")}
             >
               Upload New Art
+            </button>
+            <button
+              className={`tab-button ${activeTab === ("blog" as ActiveTabType) ? "active" : ""}`}
+              onClick={() => setActiveTab("blog")}
+            >
+              Blog Management
             </button>
           </div>
 
@@ -492,7 +787,13 @@ export default function Dashboard() {
                         <tr key={art.id}>
                           <td>
                             <div className="art-thumbnail">
-                              <Image src={art.image || "/placeholder.svg"} alt={art.title} width={50} height={50} />
+                              <Image
+                                src={art.image || "/placeholder.svg"}
+                                alt={art.title}
+                                width={50}
+                                height={50}
+                                loader={cloudinaryLoader}
+                              />
                             </div>
                           </td>
                           <td>{art.title}</td>
@@ -506,11 +807,14 @@ export default function Dashboard() {
                           </td>
                           <td>
                             <div className="art-actions">
-                              <button className="action-button edit" onClick={() => alert(`Edit ${art.title}`)}>
+                              <button className="action-button edit" onClick={() => handleEditArt(art.id)}>
                                 Edit
                               </button>
                               <button className="action-button feature" onClick={() => handleToggleFeatured(art.id)}>
                                 {art.featured ? "Unfeature" : "Feature"}
+                              </button>
+                              <button className="action-button delete" onClick={() => handleDeleteArt(art.id)}>
+                                Delete
                               </button>
                             </div>
                           </td>
@@ -524,6 +828,14 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Edit Art Modal */}
+      <EditArtModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        artId={selectedArtId}
+        onSuccess={handleEditSuccess}
+      />
     </MainLayout>
   )
 }

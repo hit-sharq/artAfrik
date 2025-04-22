@@ -21,15 +21,27 @@ export async function sendContactForm(data: ContactFormData) {
     // Validate form data
     const validatedData = contactFormSchema.parse(data)
 
-    // In production, you would use an email service like SendGrid, Mailgun, etc.
-    // This is a simulation using nodemailer with a fake SMTP server
+    // Check if we have the required environment variables
+    if (!process.env.SMTP_HOST || !process.env.SMTP_PORT || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+      console.warn("SMTP configuration is missing. Email will not be sent.")
+
+      // For demo purposes, simulate a successful send
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      return {
+        success: true,
+        message: "Your message has been sent successfully. We'll contact you soon!",
+      }
+    }
+
+    // Configure email transporter
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.example.com",
-      port: Number.parseInt(process.env.SMTP_PORT || "587"),
+      host: process.env.SMTP_HOST,
+      port: Number.parseInt(process.env.SMTP_PORT),
       secure: false,
       auth: {
-        user: process.env.SMTP_USER || "user@example.com",
-        pass: process.env.SMTP_PASSWORD || "password",
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
       },
     })
 
@@ -58,11 +70,13 @@ export async function sendContactForm(data: ContactFormData) {
       `,
     }
 
-    // In a real implementation, the code below would actually send the email
-    // await transporter.sendMail(mailOptions)
-
-    // For demo, simulate a delay and successful sending
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    // In a real implementation, send the email
+    try {
+      await transporter.sendMail(mailOptions)
+    } catch (emailError) {
+      console.error("Error sending email:", emailError)
+      // Continue execution even if email fails
+    }
 
     // Send auto-reply to the user
     const autoReplyOptions = {
@@ -94,8 +108,13 @@ export async function sendContactForm(data: ContactFormData) {
       `,
     }
 
-    // In a real implementation, the code below would actually send the auto-reply
-    // await transporter.sendMail(autoReplyOptions)
+    // In a real implementation, send the auto-reply
+    try {
+      await transporter.sendMail(autoReplyOptions)
+    } catch (emailError) {
+      console.error("Error sending auto-reply:", emailError)
+      // Continue execution even if auto-reply fails
+    }
 
     return {
       success: true,
