@@ -9,6 +9,9 @@ import { useAuth } from "@clerk/nextjs"
 import MainLayout from "../../components/MainLayout"
 import "./dashboard.css"
 
+// Add this near the top of the file with other imports
+import { createArtListing } from "../actions/art-actions"
+
 // Define a type for the active tab to ensure type safety
 type ActiveTabType = "orders" | "art" | "upload"
 
@@ -124,8 +127,10 @@ export default function Dashboard() {
     async function checkAdminStatus() {
       if (isLoaded && isSignedIn) {
         try {
+          console.log("Checking admin status for signed-in user")
           const response = await fetch("/api/check-admin")
           const data = await response.json()
+          console.log("Admin check response:", data)
           setIsAdmin(data.isAdmin)
         } catch (error) {
           console.error("Error checking admin status:", error)
@@ -209,6 +214,46 @@ export default function Dashboard() {
     )
   }
 
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setUploading(true)
+
+    const form = e.currentTarget
+
+    try {
+      const formData = new FormData(form)
+
+      // Add the uploaded files to the form data
+      if (uploadedFiles.length > 0) {
+        // Remove any existing files first
+        formData.delete("images")
+
+        // Add each file to the form data
+        uploadedFiles.forEach((file) => {
+          formData.append("images", file)
+        })
+      }
+
+      const result = await createArtListing(formData)
+
+      if (result.success) {
+        alert(result.message)
+        // Clear the form
+        form.reset()
+        setUploadedFiles([])
+        // Refresh the router to update gallery page
+        router.refresh()
+      } else {
+        alert(result.message)
+      }
+    } catch (error: any) {
+      console.error("Error uploading art:", error)
+      alert(`There was an error uploading the art: ${error?.message || error}`)
+    } finally {
+      setUploading(false)
+    }
+  }
+
   if (activeTab === "upload") {
     return (
       <MainLayout>
@@ -241,7 +286,7 @@ export default function Dashboard() {
               <div className="upload-tab">
                 <h2>Upload New Art</h2>
 
-                <form className="upload-form">
+                <form className="upload-form" onSubmit={handleSubmit}>
                   <div className="form-group">
                     <label htmlFor="title">Art Title</label>
                     <input type="text" id="title" name="title" />

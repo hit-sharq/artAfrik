@@ -104,6 +104,7 @@ export async function createArtListing(formData: FormData) {
       },
     })
 
+    // Make sure to revalidate both the gallery and home pages
     revalidatePath("/gallery")
     revalidatePath("/")
 
@@ -219,6 +220,35 @@ export async function toggleFeatured(id: string) {
     return {
       success: false,
       message: "There was an error updating the art listing. Please try again.",
+    }
+  }
+}
+export async function deleteArtListing(id: string) {
+  if (!(await isAdmin())) {
+    return {
+      success: false,
+      message: "Unauthorized. Only admins can delete art listings.",
+    }
+  }
+
+  try {
+    // Delete the art listing from the database
+    await prisma.artListing.delete({
+      where: { id },
+    })
+
+    revalidatePath("/gallery")
+    revalidatePath("/")
+
+    return {
+      success: true,
+      message: "Art listing deleted successfully",
+    }
+  } catch (error) {
+    console.error("Error deleting art listing:", error)
+    return {
+      success: false,
+      message: "There was an error deleting the art listing. Please try again.",
     }
   }
 }
