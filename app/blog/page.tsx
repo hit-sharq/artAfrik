@@ -1,96 +1,73 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import MainLayout from "@/components/MainLayout"
+import { useSearchParams } from "next/navigation"
+import MainLayout from "../../components/MainLayout"
 import "./blog.css"
 
 // Import the cloudinaryLoader
 import { cloudinaryLoader } from "@/lib/cloudinary"
 
-// Mock data for blog posts
-const blogPosts = [
-  {
-    id: "1",
-    title: "The Rich History of West African Masks",
-    slug: "west-african-masks-history",
-    excerpt:
-      "Explore the cultural significance and artistic traditions behind West African ceremonial masks and their importance in various rituals and celebrations.",
-    category: "Art History",
-    author: "Lilian Ndanu",
-    date: "April 15, 2025",
-    image: "/placeholder.svg?height=400&width=600",
-    featured: true,
-  },
-  {
-    id: "2",
-    title: "Sustainable Wood Sourcing in African Art",
-    slug: "sustainable-wood-sourcing",
-    excerpt:
-      "Learn about how modern African artisans are balancing traditional craftsmanship with sustainable practices to preserve both cultural heritage and natural resources.",
-    category: "Sustainability",
-    author: "Joshua Mwendwa",
-    date: "April 10, 2025",
-    image: "/placeholder.svg?height=400&width=600",
-    featured: false,
-  },
-  {
-    id: "3",
-    title: "Symbolism in East African Sculptures",
-    slug: "east-african-sculpture-symbolism",
-    excerpt:
-      "Discover the hidden meanings and symbolic elements commonly found in traditional East African wooden sculptures and their connection to spiritual beliefs.",
-    category: "Art Appreciation",
-    author: "Mutuku Moses",
-    date: "April 5, 2025",
-    image: "/placeholder.svg?height=400&width=600",
-    featured: false,
-  },
-  {
-    id: "4",
-    title: "The Modern Market for Traditional African Art",
-    slug: "modern-market-traditional-art",
-    excerpt:
-      "An analysis of how global appreciation for traditional African art has evolved and the current market trends affecting artisans and collectors alike.",
-    category: "Market Trends",
-    author: "Lilian Ndanu",
-    date: "March 28, 2025",
-    image: "/placeholder.svg?height=400&width=600",
-    featured: false,
-  },
-  {
-    id: "5",
-    title: "Caring for Your Wooden Art Pieces",
-    slug: "caring-for-wooden-art",
-    excerpt:
-      "Essential tips for maintaining and preserving your wooden African art pieces to ensure they remain beautiful for generations to come.",
-    category: "Care Guide",
-    author: "Joshua Mwendwa",
-    date: "March 20, 2025",
-    image: "/placeholder.svg?height=400&width=600",
-    featured: false,
-  },
-  {
-    id: "6",
-    title: "The Art of Ebony Carving",
-    slug: "ebony-carving-techniques",
-    excerpt:
-      "A deep dive into the specialized techniques used by master carvers to transform ebony wood into intricate and stunning works of art.",
-    category: "Craftsmanship",
-    author: "Mutuku Moses",
-    date: "March 15, 2025",
-    image: "/placeholder.svg?height=400&width=600",
-    featured: false,
-  },
-]
-
-// Get all unique categories from blog posts
-const allCategories = ["All", ...new Set(blogPosts.map((post) => post.category))]
+interface BlogPost {
+  id: string
+  title: string
+  slug: string
+  excerpt: string
+  category: string
+  author: string
+  date: string
+  image?: string
+  featured: boolean
+}
 
 export default function Blog() {
-  const [selectedCategory, setSelectedCategory] = useState("All")
+  const searchParams = useSearchParams()
+  const categoryParam = searchParams.get("category") || "All"
+
+  const [selectedCategory, setSelectedCategory] = useState(categoryParam)
   const [searchQuery, setSearchQuery] = useState("")
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [categories, setCategories] = useState<string[]>([])
+
+  // Fetch blog posts
+  useEffect(() => {
+    async function fetchBlogPosts() {
+      setIsLoading(true)
+      try {
+        const response = await fetch("/api/blog-posts")
+        if (response.ok) {
+          const data = await response.json()
+          // Convert dates to user-friendly format
+          const formattedPosts = data.map((post: any) => ({
+            ...post,
+            date: new Date(post.date).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            }),
+          }))
+          setBlogPosts(formattedPosts)
+
+          // Extract unique categories
+          const uniqueCategories = ["All", ...Array.from(new Set(data.map((post: any) => post.category as string)))] as string[]
+          setCategories(uniqueCategories)
+        } else {
+          console.error("Failed to fetch blog posts")
+          setBlogPosts([])
+        }
+      } catch (error) {
+        console.error("Error fetching blog posts:", error)
+        setBlogPosts([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchBlogPosts()
+  }, [])
 
   // Filter posts based on selected category and search query
   const filteredPosts = blogPosts.filter((post) => {
@@ -148,7 +125,7 @@ export default function Blog() {
             <div className="category-filter">
               <label htmlFor="category">Filter by Category:</label>
               <select id="category" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
-                {allCategories.map((category) => (
+                {categories.map((category) => (
                   <option key={category} value={category}>
                     {category}
                   </option>
@@ -166,7 +143,21 @@ export default function Blog() {
           </div>
 
           <div className="blog-grid">
-            {filteredPosts.length > 0 ? (
+            {isLoading ? (
+              // Loading skeleton
+              Array(6)
+                .fill(0)
+                .map((_, i) => (
+                  <div className="blog-card skeleton" key={i}>
+                    <div className="blog-image skeleton-image"></div>
+                    <div className="blog-content">
+                      <div className="skeleton-text"></div>
+                      <div className="skeleton-text short"></div>
+                      <div className="skeleton-text"></div>
+                    </div>
+                  </div>
+                ))
+            ) : filteredPosts.length > 0 ? (
               filteredPosts.map((post) => (
                 <div className="blog-card" key={post.id}>
                   <div className="blog-image">

@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { useAuth } from "@clerk/nextjs"
 import MainLayout from "../../components/MainLayout"
@@ -12,6 +12,7 @@ import "./dashboard.css"
 
 // Add this near the top of the file with other imports
 import { createArtListing, toggleFeatured, deleteArtListing } from "../actions/art-actions"
+import { deleteBlogPost } from "../actions/blog-actions"
 import { cloudinaryLoader } from "@/lib/cloudinary"
 
 // Define a type for the active tab to ensure type safety
@@ -46,6 +47,8 @@ interface BlogPost {
   category: string
   author: string
   date: string
+  status: string
+  featured: boolean
 }
 
 // Define a new interface for the file uploads with preview
@@ -56,10 +59,14 @@ interface FileWithPreview extends File {
 export default function Dashboard() {
   const { isSignedIn, isLoaded } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Get the tab from URL query parameters
+  const tabParam = searchParams.get("tab") as ActiveTabType | null
+
   // Use the defined type for activeTab
-  const [activeTab, setActiveTab] = useState<ActiveTabType>("orders")
+  const [activeTab, setActiveTab] = useState<ActiveTabType>(tabParam || "orders")
   const [orders, setOrders] = useState<Order[]>([])
   const [artListings, setArtListings] = useState<ArtListing[]>([])
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
@@ -71,6 +78,13 @@ export default function Dashboard() {
   // Edit modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedArtId, setSelectedArtId] = useState("")
+
+  useEffect(() => {
+    // Update the URL when tab changes
+    if (activeTab) {
+      router.push(`/dashboard?tab=${activeTab}`, { scroll: false })
+    }
+  }, [activeTab, router])
 
   useEffect(() => {
     async function checkAdminStatus() {
@@ -232,47 +246,23 @@ export default function Dashboard() {
       const response = await fetch("/api/blog-posts")
       if (response.ok) {
         const data = await response.json()
-        setBlogPosts(data)
+        setBlogPosts(
+          data.map((post: any) => ({
+            ...post,
+            date: new Date(post.date).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            }),
+          })),
+        )
       } else {
         console.error("Failed to fetch blog posts")
-        // Fallback to mock data
-        setBlogPosts([
-          {
-            id: "1",
-            title: "The Rich History of West African Masks",
-            slug: "west-african-masks-history",
-            excerpt:
-              "Explore the cultural significance and artistic traditions behind West African ceremonial masks...",
-            category: "Art History",
-            author: "Lilian Ndanu",
-            date: "April 15, 2025",
-          },
-          {
-            id: "2",
-            title: "Sustainable Wood Sourcing in African Art",
-            slug: "sustainable-wood-sourcing",
-            excerpt:
-              "Learn about how modern African artisans are balancing traditional craftsmanship with sustainable practices...",
-            category: "Sustainability",
-            author: "Joshua Mwendwa",
-            date: "April 10, 2025",
-          },
-        ])
+        setBlogPosts([])
       }
     } catch (error) {
       console.error("Error fetching blog posts:", error)
-      // Fallback to mock data
-      setBlogPosts([
-        {
-          id: "1",
-          title: "The Rich History of West African Masks",
-          slug: "west-african-masks-history",
-          excerpt: "Explore the cultural significance and artistic traditions behind West African ceremonial masks...",
-          category: "Art History",
-          author: "Lilian Ndanu",
-          date: "April 15, 2025",
-        },
-      ])
+      setBlogPosts([])
     }
   }
 
@@ -385,6 +375,23 @@ export default function Dashboard() {
         }
       } catch (error) {
         console.error("Error deleting art listing:", error)
+      }
+    }
+  }
+
+  const handleDeleteBlogPost = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this blog post? This action cannot be undone.")) {
+      try {
+        const result = await deleteBlogPost(id)
+
+        if (result.success) {
+          // Remove from local state
+          setBlogPosts((prevPosts) => prevPosts.filter((post) => post.id !== id))
+        } else {
+          console.error("Failed to delete blog post:", result.message)
+        }
+      } catch (error) {
+        console.error("Error deleting blog post:", error)
       }
     }
   }
@@ -635,40 +642,52 @@ export default function Dashboard() {
                         <th>Category</th>
                         <th>Author</th>
                         <th>Date</th>
+                        <th>Status</th>
+                        <th>Featured</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {blogPosts.map((post) => (
-                        <tr key={post.id}>
-                          <td className="blog-title">{post.title}</td>
-                          <td className="blog-excerpt">{post.excerpt}</td>
-                          <td className="blog-category">{post.category}</td>
-                          <td>{post.author}</td>
-                          <td className="blog-date">{post.date}</td>
-                          <td>
-                            <div className="art-actions">
-                              <button
-                                className="action-button edit"
-                                onClick={() => router.push(`/dashboard/blog/edit/${post.id}`)}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                className="action-button delete"
-                                onClick={() => {
-                                  if (window.confirm("Are you sure you want to delete this blog post?")) {
-                                    // Delete blog post logic
-                                    console.log("Delete blog post:", post.id)
-                                  }
-                                }}
-                              >
-                                Delete
-                              </button>
-                            </div>
+                      {blogPosts.length > 0 ? (
+                        blogPosts.map((post) => (
+                          <tr key={post.id}>
+                            <td className="blog-title">{post.title}</td>
+                            <td className="blog-excerpt">{post.excerpt}</td>
+                            <td className="blog-category">{post.category}</td>
+                            <td>{post.author}</td>
+                            <td className="blog-date">{post.date}</td>
+                            <td>
+                              <span className={`status-badge ${post.status}`}>
+                                {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`featured-badge ${post.featured ? "yes" : "no"}`}>
+                                {post.featured ? "Yes" : "No"}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="art-actions">
+                                <button
+                                  className="action-button edit"
+                                  onClick={() => router.push(`/dashboard/blog/edit/${post.id}`)}
+                                >
+                                  Edit
+                                </button>
+                                <button className="action-button delete" onClick={() => handleDeleteBlogPost(post.id)}>
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={8} style={{ textAlign: "center", padding: "20px" }}>
+                            No blog posts found. Create your first blog post!
                           </td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                 </div>

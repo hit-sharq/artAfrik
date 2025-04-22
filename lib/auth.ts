@@ -4,6 +4,7 @@ import { prisma } from "./prisma"
 // List of Clerk user IDs that should have admin access
 const ADMIN_USER_IDS = [
   "user_2w2Wa9Cfm4zh2ylxrBIjKDmsbyb", // Your current Clerk ID
+  "user_2vp52ih5B2BjcnFEGc6ysIPfV4o", // Another admin Clerk ID
   // Add any other admin IDs here
 ]
 

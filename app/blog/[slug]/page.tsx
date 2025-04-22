@@ -1,181 +1,143 @@
 "use client"
 
-import { useParams, useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useParams, useRouter } from "next/navigation"
 import MainLayout from "@/components/MainLayout"
 import "./blog-post.css"
-
-// Import the cloudinaryLoader
+import { getBlogPost } from "@/app/actions/blog-actions"
+// Import the CloudinaryImage component
 import { cloudinaryLoader } from "@/lib/cloudinary"
 
-// Mock data for blog posts
-const blogPosts = [
-  {
-    id: "1",
-    title: "The Rich History of West African Masks",
-    slug: "west-african-masks-history",
-    content: `
-      <p>West African masks represent one of the most distinctive and celebrated art forms to emerge from the African continent. These masks are not merely decorative objects but serve as important cultural artifacts with deep spiritual and social significance.</p>
-      
-      <h2>Cultural Significance</h2>
-      <p>In many West African societies, masks are used in ritual ceremonies, initiations, and social events. They often represent spirits, ancestors, or mythological characters and are believed to transform the wearer, allowing them to embody the spirit represented by the mask.</p>
-      
-      <p>The Dogon people of Mali, for example, use masks in ceremonies that connect the living with their ancestors. The intricate designs and patterns carved into these masks tell stories of creation myths and important historical events.</p>
-      
-      <h2>Artistic Traditions</h2>
-      <p>The craftsmanship involved in creating these masks requires years of training and apprenticeship. Master carvers use techniques passed down through generations, working primarily with local hardwoods like ebony, iroko, and mahogany.</p>
-      
-      <p>Regional variations in style are significant. Masks from the Dan people of Liberia and Côte d'Ivoire often feature smooth, oval faces with delicate features, while Senufo masks might incorporate geometric patterns and animal motifs.</p>
-      
-      <h2>Modern Relevance</h2>
-      <p>Today, these masks continue to play an important role in cultural preservation efforts. While some are still used in traditional ceremonies, others have found their way into museums and private collections worldwide, serving as ambassadors of African artistic heritage.</p>
-      
-      <p>Contemporary African artists also draw inspiration from these traditional forms, creating modern interpretations that bridge the gap between ancient traditions and contemporary artistic expression.</p>
-      
-      <h2>Preservation Challenges</h2>
-      <p>The preservation of authentic mask-making traditions faces several challenges, including the commercialization of African art, the decline of traditional religious practices, and the aging of master craftsmen without sufficient numbers of apprentices to carry on their knowledge.</p>
-      
-      <p>Organizations across West Africa are working to document these traditions and support artisans who maintain the authentic techniques and cultural knowledge associated with mask-making.</p>
-    `,
-    category: "Art History",
-    author: "Lilian Ndanu",
-    authorTitle: "Cultural Specialist, PhD in Arts",
-    authorBio:
-      "Lilian specializes in the cultural and historical context of traditional African art forms. She has conducted extensive field research across West Africa.",
-    authorImage: "/images/lilian.jpg",
-    date: "April 15, 2025",
-    image: "/placeholder.svg?height=600&width=1200",
-    tags: ["Masks", "West Africa", "Cultural Heritage", "Rituals", "Woodcarving"],
-  },
-  {
-    id: "2",
-    title: "Sustainable Wood Sourcing in African Art",
-    slug: "sustainable-wood-sourcing",
-    content: `
-      <p>The creation of traditional African wooden art pieces has relied on local hardwoods for centuries. Today, as environmental concerns grow and forests face increasing pressure, artisans are adapting their practices to ensure sustainability.</p>
-      
-      <h2>Traditional Woods in African Art</h2>
-      <p>Historically, African artisans have favored dense hardwoods like ebony, rosewood, and mahogany for their durability, beautiful grain patterns, and ability to hold intricate carving details. These woods have been central to creating masks, statues, and functional items that have defined African artistic traditions.</p>
-      
-      <p>However, many of these wood species now face threats from overexploitation, illegal logging, and habitat loss. Ebony, in particular, has become increasingly rare and is now protected in many regions.</p>
-      
-      <h2>Sustainable Alternatives</h2>
-      <p>Forward-thinking artisans are exploring several approaches to sustainability:</p>
-      
-      <ul>
-        <li><strong>Alternative Woods:</strong> Using faster-growing local species that can provide similar aesthetic qualities while being more abundant and renewable.</li>
-        <li><strong>Reclaimed Wood:</strong> Repurposing wood from old buildings, furniture, or fallen trees to create new art pieces.</li>
-        <li><strong>Managed Forestry:</strong> Working with certified sustainable forestry operations that ensure trees are replanted and ecosystems maintained.</li>
-      </ul>
-      
-      <h2>Community Forestry Initiatives</h2>
-      <p>In several regions across Africa, community-based forestry programs are helping to balance artistic traditions with environmental stewardship. These programs give local communities control over their forest resources while providing training in sustainable harvesting methods.</p>
-      
-      <p>In Ghana, for example, the Kumasi Wood Carvers Association works with forestry officials to ensure members have access to legally and sustainably harvested wood, while also participating in reforestation efforts.</p>
-      
-      <h2>Certification and Market Access</h2>
-      <p>International certification programs like the Forest Stewardship Council (FSC) are helping artisans demonstrate their commitment to sustainability. These certifications can also provide access to environmentally conscious markets where consumers are willing to pay premium prices for sustainably sourced art.</p>
-      
-      <p>The challenge remains to make these certification processes accessible and affordable for small-scale artisans and cooperatives.</p>
-      
-      <h2>The Path Forward</h2>
-      <p>Balancing tradition with sustainability requires ongoing innovation and adaptation. By embracing sustainable practices, African artisans are not only preserving their natural resources but also ensuring that their artistic traditions can continue for generations to come.</p>
-      
-      <p>As consumers, we can support these efforts by seeking out art pieces that come with information about their sourcing and by being willing to pay fair prices that reflect the true environmental and cultural value of these works.</p>
-    `,
-    category: "Sustainability",
-    author: "Joshua Mwendwa",
-    authorTitle: "Artisan Relations Specialist",
-    authorBio:
-      "Joshua works directly with artisan communities across Africa, focusing on sustainable practices and fair trade partnerships.",
-    authorImage: "/images/7386.jpg",
-    date: "April 10, 2025",
-    image: "/placeholder.svg?height=600&width=1200",
-    tags: ["Sustainability", "Wood Sourcing", "Environmental Conservation", "Artisan Practices"],
-  },
-  {
-    id: "3",
-    title: "Symbolism in East African Sculptures",
-    slug: "east-african-sculpture-symbolism",
-    content: `<p>Sample content for East African Sculptures article...</p>`,
-    category: "Art Appreciation",
-    author: "Mutuku Moses",
-    authorTitle: "Founder & Curator",
-    authorBio:
-      "With over 7 years of experience working with African art, Musa founded Arts Afrik to share his passion for traditional craftsmanship.",
-    authorImage: "/images/musa.JPG",
-    date: "April 5, 2025",
-    image: "/placeholder.svg?height=600&width=1200",
-    tags: ["East Africa", "Symbolism", "Sculpture", "Cultural Meaning"],
-  },
-  {
-    id: "4",
-    title: "The Modern Market for Traditional African Art",
-    slug: "modern-market-traditional-art",
-    content: `<p>Sample content for Modern Market article...</p>`,
-    category: "Market Trends",
-    author: "Lilian Ndanu",
-    authorTitle: "Cultural Specialist, PhD in Arts",
-    authorBio:
-      "Lilian provides expert knowledge on the cultural context and historical significance of each art piece.",
-    authorImage: "/images/lilian.jpg",
-    date: "March 28, 2025",
-    image: "/placeholder.svg?height=600&width=1200",
-    tags: ["Market Trends", "Collectors", "Global Art Market", "Valuation"],
-  },
-  {
-    id: "5",
-    title: "Caring for Your Wooden Art Pieces",
-    slug: "caring-for-wooden-art",
-    content: `<p>Sample content for Caring for Wooden Art article...</p>`,
-    category: "Care Guide",
-    author: "Joshua Mwendwa",
-    authorTitle: "Artisan Relations Specialist",
-    authorBio:
-      "Joshua works directly with artisan communities, ensuring fair partnerships and helping to bring their unique creations to a global audience.",
-    authorImage: "/images/7386.jpg",
-    date: "March 20, 2025",
-    image: "/placeholder.svg?height=600&width=1200",
-    tags: ["Care Guide", "Preservation", "Maintenance", "Wood Care"],
-  },
-  {
-    id: "6",
-    title: "The Art of Ebony Carving",
-    slug: "ebony-carving-techniques",
-    content: `<p>Sample content for Ebony Carving article...</p>`,
-    category: "Craftsmanship",
-    author: "Mutuku Moses",
-    authorTitle: "Founder & Curator",
-    authorBio:
-      "With over 7 years of experience working with African art, Musa founded Arts Afrik to share his passion for traditional craftsmanship.",
-    authorImage: "/images/musa.JPG",
-    date: "March 15, 2025",
-    image: "/placeholder.svg?height=600&width=1200",
-    tags: ["Ebony", "Carving Techniques", "Craftsmanship", "Traditional Skills"],
-  },
-]
+interface BlogPost {
+  id: string
+  title: string
+  slug: string
+  content: string
+  excerpt: string
+  category: string
+  author: string
+  authorTitle?: string
+  authorImage?: string
+  date: string
+  image?: string
+  tags: string[]
+  featured: boolean
+  allowComments: boolean
+}
 
 export default function BlogPost() {
   const { slug } = useParams()
   const router = useRouter()
+  const [activeImage, setActiveImage] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const [post, setPost] = useState<BlogPost | null>(null)
+  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([])
+  const [error, setError] = useState<string | null>(null)
 
-  // Find the blog post with the matching slug
-  const post = blogPosts.find((post) => post.slug === slug)
+  useEffect(() => {
+    const fetchBlogPost = async () => {
+      setIsLoading(true)
+      try {
+        const result = await getBlogPost(slug as string)
+        if (result.success) {
+          setPost({
+            ...result.post,
+            date: new Date(result.post.date).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            }),
+          })
 
-  // Get related posts (same category, excluding current post)
-  const relatedPosts = post ? blogPosts.filter((p) => p.category === post.category && p.id !== post.id).slice(0, 3) : []
+          // Fetch related posts
+          const response = await fetch("/api/blog-posts")
+          if (response.ok) {
+            const allPosts = await response.json()
+            const related = allPosts
+              .filter((p: any) => p.slug !== slug && p.category === result.post.category)
+              .slice(0, 3)
+              .map((p: any) => ({
+                ...p,
+                date: new Date(p.date).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                }),
+              }))
+            setRelatedPosts(related)
+          }
+        } else {
+          setError(result.message || "Failed to load blog post")
+        }
+      } catch (error) {
+        console.error("Error loading blog post:", error)
+        setError("An error occurred while loading the blog post")
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-  if (!post) {
+    if (slug) {
+      fetchBlogPost()
+    }
+  }, [slug])
+
+  const handleGoBack = () => {
+    router.back()
+  }
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="product-detail">
+          <div className="container">
+            <div className="product-content skeleton">
+              <div className="product-gallery">
+                <div className="main-image skeleton-image"></div>
+                <div className="thumbnail-gallery">
+                  {[1, 2, 3].map((_, index) => (
+                    <div key={index} className="thumbnail skeleton-image"></div>
+                  ))}
+                </div>
+              </div>
+              <div className="product-info">
+                <div className="skeleton-text"></div>
+                <div className="product-meta skeleton">
+                  {[1, 2, 3, 4].map((_, index) => (
+                    <div key={index} className="skeleton-text"></div>
+                  ))}
+                </div>
+                <div className="product-description skeleton">
+                  <div className="skeleton-text"></div>
+                  <div className="skeleton-text"></div>
+                  <div className="skeleton-text"></div>
+                </div>
+                <div className="skeleton-button"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
+
+  if (error || !post) {
     return (
       <MainLayout>
         <div className="container">
           <div className="not-found">
             <h1>Blog Post Not Found</h1>
-            <p>Sorry, we couldn't find the blog post you're looking for.</p>
-            <Link href="/blog" className="button">
-              Return to Blog
-            </Link>
+            <p>{error || "Sorry, we couldn't find the blog post you're looking for."}</p>
+            <div className="not-found-actions">
+              <Link href="/blog" className="button">
+                Browse Blog
+              </Link>
+              <button onClick={handleGoBack} className="button secondary-button">
+                Go Back
+              </button>
+            </div>
           </div>
         </div>
       </MainLayout>
@@ -212,7 +174,7 @@ export default function BlogPost() {
 
         <div className="featured-image-container">
           <Image
-            src={post.image || "/placeholder.svg"}
+            src={post.image || "/placeholder.svg?height=600&width=1200"}
             alt={post.title}
             width={1200}
             height={600}
@@ -226,11 +188,12 @@ export default function BlogPost() {
             <div className="post-content" dangerouslySetInnerHTML={{ __html: post.content }} />
 
             <div className="post-tags">
-              {post.tags.map((tag) => (
-                <span key={tag} className="tag">
-                  {tag}
-                </span>
-              ))}
+              {post.tags &&
+                post.tags.map((tag) => (
+                  <span key={tag} className="tag">
+                    {tag}
+                  </span>
+                ))}
             </div>
 
             <div className="author-bio">
@@ -246,7 +209,10 @@ export default function BlogPost() {
               <div className="author-details">
                 <h3>About {post.author}</h3>
                 <p className="author-title">{post.authorTitle}</p>
-                <p className="bio-text">{post.authorBio}</p>
+                <p className="bio-text">
+                  Expert in African art and culture with extensive knowledge of traditional craftsmanship and artistic
+                  heritage.
+                </p>
               </div>
             </div>
           </div>
