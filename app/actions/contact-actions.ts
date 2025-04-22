@@ -75,6 +75,12 @@ export async function sendContactForm(data: ContactFormData) {
       await transporter.sendMail(mailOptions)
     } catch (emailError) {
       console.error("Error sending email:", emailError)
+      if (typeof emailError === 'object' && emailError !== null && 'code' in emailError) {
+        // @ts-ignore
+        if (emailError.code === 'EAUTH') {
+          console.error("Authentication failed. Please check your SMTP_USER and SMTP_PASSWORD environment variables and Gmail account settings (App Password or Less secure app access).")
+        }
+      }
       // Continue execution even if email fails
     }
 
@@ -113,6 +119,12 @@ export async function sendContactForm(data: ContactFormData) {
       await transporter.sendMail(autoReplyOptions)
     } catch (emailError) {
       console.error("Error sending auto-reply:", emailError)
+      if (typeof emailError === 'object' && emailError !== null && 'code' in emailError) {
+        // @ts-ignore
+        if (emailError.code === 'EAUTH') {
+          console.error("Authentication failed on auto-reply. Please check your SMTP_USER and SMTP_PASSWORD environment variables and Gmail account settings (App Password or Less secure app access).")
+        }
+      }
       // Continue execution even if auto-reply fails
     }
 

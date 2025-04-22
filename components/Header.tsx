@@ -66,8 +66,8 @@ const Header = () => {
               <SignedIn>
                 <div className="user-section">
                   <Link
-                    href="/dashboard"
-                    className={`dashboard-link ${isActive("/dashboard")}`}
+                    href="/user-dashboard"
+                    className={`dashboard-link ${isActive("/user-dashboard") || isActive("/dashboard")}`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Dashboard
