@@ -227,7 +227,16 @@ export default function ProductDetail() {
               </div>
 
               <div className="product-actions">
-                <Link href={`/order/${art.id}`} className="button request-button">
+                <Link
+                  href={{
+                    pathname: "/contact",
+                    query: {
+                      pieceId: art.id,
+                      pieceTitle: art.title,
+                    },
+                  }}
+                  className="button request-button"
+                >
                   Request This Piece
                 </Link>
 

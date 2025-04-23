@@ -26,12 +26,15 @@ const INQUIRY_TYPES = [
 export default function Contact() {
   const searchParams = useSearchParams()
   const initialInquiryType = searchParams.get("type") || "general"
+  const pieceTitle = searchParams.get("pieceTitle") || ""
   const [formState, setFormState] = useState({
     name: "",
     email: "",
     phone: "",
-    subject: "",
-    message: "",
+    subject: pieceTitle ? `Inquiry about: ${pieceTitle}` : "",
+    message: pieceTitle
+      ? `Hello,\n\nI am interested in the art piece titled "${pieceTitle}". Please provide more details.\n\nThank you.`
+      : "",
     inquiryType: initialInquiryType,
   })
 
