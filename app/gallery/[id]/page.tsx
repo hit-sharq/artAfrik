@@ -270,6 +270,7 @@ export default function ProductDetail() {
                         alt={item.title}
                         fill
                         style={{ objectFit: "cover" }}
+                        loader={cloudinaryLoader}
                       />
                       <div className="art-overlay">
                         <Link href={`/gallery/${item.id}`} className="quick-view">
