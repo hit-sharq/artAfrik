@@ -26,7 +26,7 @@ interface Artwork {
 
 export default function Home() {
   const [categories, setCategories] = useState<Category[]>([])
-  const [featuredArtworks, setFeaturedArtworks] = useState<Artwork[]>([])
+  const [categoryArtworks, setCategoryArtworks] = useState<Artwork[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -39,14 +39,29 @@ export default function Home() {
         const catData = await catRes.json()
         setCategories(catData)
 
-        // Fetch featured artworks
-        const artRes = await fetch("/api/featured-artworks")
-        if (!artRes.ok) throw new Error("Failed to fetch featured artworks")
-        const artData = await artRes.json()
-        setFeaturedArtworks(artData)
+        // Fetch all artworks from gallery
+        const artRes = await fetch("/api/art-listings")
+        if (!artRes.ok) throw new Error("Failed to fetch gallery artworks")
+        const artData: Artwork[] = await artRes.json()
+
+        // For each category, select one unique artwork by title (name)
+        const selectedArtworks: Artwork[] = []
+        const usedTitles = new Set<string>()
+
+        for (const category of catData) {
+          const artForCategory = artData.find(
+            (art) => art.woodType === category.name && !usedTitles.has(art.title)
+          )
+          if (artForCategory) {
+            selectedArtworks.push(artForCategory)
+            usedTitles.add(artForCategory.title)
+          }
+        }
+
+        setCategoryArtworks(selectedArtworks)
       } catch (error) {
         console.error("Failed to fetch data:", error)
-        // Set fallback data if API fails
+        // Fallback data if API fails
         setCategories([
           {
             name: "Ebony",
@@ -65,7 +80,7 @@ export default function Home() {
           },
         ])
 
-        setFeaturedArtworks([
+        setCategoryArtworks([
           {
             id: "1",
             title: "Traditional Mask",
@@ -159,7 +174,7 @@ export default function Home() {
                       fill
                       style={{ objectFit: "cover" }}
                       priority={true}
-                      loader={cloudinaryLoader} // Added cloudinary loader
+                      loader={cloudinaryLoader}
                     />
                   </div>
                   <h3>{category.name}</h3>
@@ -176,10 +191,9 @@ export default function Home() {
 
       <section className="featured section">
         <div className="container">
-          <h2 className="section-title">Featured Artworks</h2>
+          <h2 className="section-title">Featured Artworks by Category</h2>
           <p className="section-subtitle">
-            Our handpicked selection of exceptional African art pieces, showcasing the finest craftsmanship and cultural
-            significance.
+            Unique artworks from each category, sourced from the gallery.
           </p>
 
           <div className="featured-grid">
@@ -197,10 +211,10 @@ export default function Home() {
                     </div>
                   </div>
                 ))
-            ) : featuredArtworks.length === 0 ? (
-              <p>No featured artworks available</p>
+            ) : categoryArtworks.length === 0 ? (
+              <p>No artworks available</p>
             ) : (
-              featuredArtworks.map((art) => (
+              categoryArtworks.map((art) => (
                 <div className="art-card" key={art.id}>
                   <div className="art-image">
                     <Image
@@ -209,7 +223,7 @@ export default function Home() {
                       fill
                       style={{ objectFit: "cover" }}
                       priority={true}
-                      loader={cloudinaryLoader} // Added cloudinary loader
+                      loader={cloudinaryLoader}
                     />
                   </div>
                   <div className="art-info">
@@ -223,11 +237,6 @@ export default function Home() {
                 </div>
               ))
             )}
-          </div>
-          <div className="view-all">
-            <Link href="/gallery" className="button secondary-button">
-              View All Artworks
-            </Link>
           </div>
         </div>
       </section>
@@ -255,7 +264,7 @@ export default function Home() {
                 alt="African Artisan at Work"
                 width={600}
                 height={400}
-                loader={cloudinaryLoader} // Added cloudinary loader
+                loader={cloudinaryLoader}
               />
             </div>
           </div>
