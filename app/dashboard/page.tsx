@@ -95,9 +95,13 @@ export default function Dashboard() {
           const data = await response.json()
           console.log("Admin check response:", data)
           setIsAdmin(data.isAdmin)
+          if (!data.isAdmin) {
+            router.push("/user-dashboard")
+          }
         } catch (error) {
           console.error("Error checking admin status:", error)
           setIsAdmin(false)
+          router.push("/user-dashboard")
         } finally {
           setIsLoading(false)
         }

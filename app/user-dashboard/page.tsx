@@ -44,9 +44,25 @@ export default function UserDashboard() {
   })
 
   useEffect(() => {
+    async function checkAdminAndRedirect() {
+      if (isLoaded && isSignedIn) {
+        try {
+          const response = await fetch("/api/check-admin")
+          const data = await response.json()
+          if (data.isAdmin) {
+            router.push("/dashboard")
+            return
+          }
+        } catch (error) {
+          console.error("Error checking admin status:", error)
+        }
+      }
+    }
+
     if (isLoaded && !isSignedIn) {
       router.push("/sign-in?redirect=/user-dashboard")
     } else if (isLoaded && isSignedIn) {
+      checkAdminAndRedirect()
       // Fetch user data
       fetchUserData()
     }

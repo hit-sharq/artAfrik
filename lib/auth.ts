@@ -1,12 +1,9 @@
 import { auth } from "@clerk/nextjs/server"
 import { prisma } from "./prisma"
 
-// List of Clerk user IDs that should have admin access
-const ADMIN_USER_IDS = [
-  "user_2w2Wa9Cfm4zh2ylxrBIjKDmsbyb", // Your current Clerk ID
-  "user_2vp52ih5B2BjcnFEGc6ysIPfV4o", // Another admin Clerk ID
-  // Add any other admin IDs here
-]
+const ADMIN_USER_IDS = process.env.ADMIN_USER_IDS
+  ? process.env.ADMIN_USER_IDS.split(",").map((id) => id.trim())
+  : []
 
 // This function checks if the current user is an admin
 export async function isAdmin() {
@@ -17,7 +14,7 @@ export async function isAdmin() {
     return false
   }
 
-  // Check if the user ID is in our hardcoded admin list
+  // Check if the user ID is in our admin list from environment variables
   if (ADMIN_USER_IDS.includes(userId)) {
     return true
   }

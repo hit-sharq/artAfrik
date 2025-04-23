@@ -22,70 +22,6 @@ interface ArtListing {
   images: string[]
 }
 
-// Mock data for art listings
-const mockArtListings = [
-  {
-    id: "1",
-    title: "Traditional Mask",
-    description:
-      "This traditional mask is hand-carved from ebony wood by skilled artisans in West Africa. Each piece is unique and carries cultural significance, representing ancestral spirits and traditional ceremonies.",
-    woodType: "Ebony",
-    region: "West Africa",
-    size: '12" x 6" x 3"',
-    price: 120,
-    images: [
-      "/placeholder.svg?height=600&width=400",
-      "/placeholder.svg?height=600&width=400",
-      "/placeholder.svg?height=600&width=400",
-    ],
-  },
-  {
-    id: "2",
-    title: "Tribal Statue",
-    description:
-      "This tribal statue is meticulously crafted from rosewood, showcasing the rich artistic traditions of East Africa. The statue represents fertility and abundance, and is often used in ceremonial contexts.",
-    woodType: "Rosewood",
-    region: "East Africa",
-    size: '18" x 5" x 5"',
-    price: 150,
-    images: [
-      "/placeholder.svg?height=600&width=400",
-      "/placeholder.svg?height=600&width=400",
-      "/placeholder.svg?height=600&width=400",
-    ],
-  },
-  {
-    id: "3",
-    title: "Animal Figurine",
-    description:
-      "This beautifully crafted animal figurine is made from mahogany wood by master carvers in Central Africa. It represents the spiritual connection between humans and animals in African mythology.",
-    woodType: "Mahogany",
-    region: "Central Africa",
-    size: '8" x 4" x 4"',
-    price: 85,
-    images: [
-      "/placeholder.svg?height=600&width=400",
-      "/placeholder.svg?height=600&width=400",
-      "/placeholder.svg?height=600&width=400",
-    ],
-  },
-  {
-    id: "4",
-    title: "Decorative Bowl",
-    description:
-      "This decorative bowl is hand-carved from ebony wood, featuring intricate patterns that tell stories of daily life in Southern African communities. Perfect as a centerpiece or functional art.",
-    woodType: "Ebony",
-    region: "Southern Africa",
-    size: '10" diameter x 4" height',
-    price: 95,
-    images: [
-      "/placeholder.svg?height=600&width=400",
-      "/placeholder.svg?height=600&width=400",
-      "/placeholder.svg?height=600&width=400",
-    ],
-  },
-]
-
 export default function ProductDetail() {
   const { id } = useParams()
   const router = useRouter()
@@ -97,28 +33,34 @@ export default function ProductDetail() {
   const [isZoomed, setIsZoomed] = useState(false)
 
   useEffect(() => {
-    // In a real app, this would be an API call
     const fetchArtDetails = async () => {
       setIsLoading(true)
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 800))
+        const response = await fetch(`/api/art-listings/${id}`)
+        if (!response.ok) {
+          throw new Error("Art listing not found")
+        }
+        const artPiece = await response.json()
+        setArt(artPiece)
 
-        // Find the art piece with the matching ID
-        const artPiece = mockArtListings.find((item) => item.id === id)
-        setArt(artPiece || null)
-
-        // Get related art (same wood type or region)
-        if (artPiece) {
-          const related = mockArtListings
+        // Fetch related art based on woodType or region
+        const relatedResponse = await fetch("/api/art-listings")
+        if (relatedResponse.ok) {
+          const allArt = await relatedResponse.json()
+          const related = allArt
             .filter(
-              (item) => item.id !== id && (item.woodType === artPiece.woodType || item.region === artPiece.region),
+              (item: ArtListing) =>
+                item.id !== id && (item.woodType === artPiece.woodType || item.region === artPiece.region),
             )
             .slice(0, 3)
           setRelatedArt(related)
+        } else {
+          setRelatedArt([])
         }
       } catch (error) {
         console.error("Error fetching art details:", error)
+        setArt(null)
+        setRelatedArt([])
       } finally {
         setIsLoading(false)
       }
