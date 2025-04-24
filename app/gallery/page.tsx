@@ -46,7 +46,7 @@ export default function Gallery() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 4
+  const itemsPerPage = 6
 
   const woodTypes = ["All", "Ebony", "Rosewood", "Mahogany"]
   const regions = ["All", "West Africa", "East Africa", "Central Africa", "Southern Africa"]

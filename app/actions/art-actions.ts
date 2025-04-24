@@ -1,7 +1,16 @@
 "use server"
+import { v2 as cloudinary } from "cloudinary"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { isAdmin } from "@/lib/auth"
+
+
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
+
 
 export async function createArtListing(formData: FormData) {
   if (!(await isAdmin())) {
@@ -39,16 +48,45 @@ export async function createArtListing(formData: FormData) {
       uploadedImages[0] instanceof File &&
       uploadedImages[0].size > 0
     ) {
-      // For demonstration, log the image details
-      console.log(`Processing ${uploadedImages.length} images`)
+    // Upload each image to Cloudinary
+    for (const file of uploadedImages) {
+      try {
+        // Convert File to buffer or stream as needed
+        const arrayBuffer = await file.arrayBuffer()
+        const buffer = Buffer.from(arrayBuffer)
 
-      // In a real implementation, you would upload each image to Cloudinary
-      // For now, we'll use placeholder images
-      images = uploadedImages.map(
-        (_, index) => `/placeholder.svg?height=600&width=400&text=${encodeURIComponent(title)}-${index + 1}`,
-      )
+        // Upload to Cloudinary
+        const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            { folder: "arts_afrik" },
+            (error: any, result: any) => {
+              if (error) {
+                console.error("Cloudinary upload error:", error)
+                reject(error)
+              } else {
+                resolve(result as { secure_url: string })
+              }
+            }
+          )
+          uploadStream.end(buffer)
+        })
 
-      // Note: In a production environment, you would use the Cloudinary API to upload images
+        images.push(uploadResult.secure_url)
+      } catch (uploadError) {
+        console.error("Error uploading image to Cloudinary:", uploadError)
+        // Abort upload process on error
+        return {
+          success: false,
+          message: `Error uploading image: ${
+            uploadError instanceof Error
+              ? uploadError.message
+              : typeof uploadError === "object"
+              ? JSON.stringify(uploadError)
+              : String(uploadError)
+          }`,
+        }
+      }
+    }
     } else {
       // Use default placeholder if no images were uploaded
       images = [`/placeholder.svg?height=600&width=400&text=${encodeURIComponent(title)}`]
@@ -80,6 +118,10 @@ export async function createArtListing(formData: FormData) {
     }
   } catch (error) {
     console.error("Error creating art listing:", error)
+    if (error instanceof Error) {
+      console.error("Error message:", error.message)
+      console.error("Error stack:", error.stack)
+    }
     return {
       success: false,
       message: "There was an error creating the art listing. Please try again.",
