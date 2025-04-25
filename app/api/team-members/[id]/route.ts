@@ -44,9 +44,12 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       where: { id },
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, message: "Team member deleted successfully" })
   } catch (error) {
     console.error("Error deleting team member:", error)
-    return NextResponse.json({ error: "Failed to delete team member" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to delete team member", details: (error as Error).message },
+      { status: 500 },
+    )
   }
 }

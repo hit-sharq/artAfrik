@@ -3,7 +3,7 @@ import { v2 as cloudinary } from "cloudinary"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { isAdmin } from "@/lib/auth"
-
+import { auth } from "@clerk/nextjs/server"  // Added import for auth
 
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -11,9 +11,9 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
-
 export async function createArtListing(formData: FormData) {
-  if (!(await isAdmin())) {
+  const { userId } = await auth()  // Get userId from Clerk auth
+  if (!(await isAdmin(userId ?? undefined))) {  // Pass userId to isAdmin, handle null case
     return {
       success: false,
       message: "Unauthorized. Only admins can create art listings.",
@@ -48,45 +48,45 @@ export async function createArtListing(formData: FormData) {
       uploadedImages[0] instanceof File &&
       uploadedImages[0].size > 0
     ) {
-    // Upload each image to Cloudinary
-    for (const file of uploadedImages) {
-      try {
-        // Convert File to buffer or stream as needed
-        const arrayBuffer = await file.arrayBuffer()
-        const buffer = Buffer.from(arrayBuffer)
+      // Upload each image to Cloudinary
+      for (const file of uploadedImages) {
+        try {
+          // Convert File to buffer or stream as needed
+          const arrayBuffer = await file.arrayBuffer()
+          const buffer = Buffer.from(arrayBuffer)
 
-        // Upload to Cloudinary
-        const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
-            { folder: "arts_afrik" },
-            (error: any, result: any) => {
-              if (error) {
-                console.error("Cloudinary upload error:", error)
-                reject(error)
-              } else {
-                resolve(result as { secure_url: string })
+          // Upload to Cloudinary
+          const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+              { folder: "arts_afrik" },
+              (error: any, result: any) => {
+                if (error) {
+                  console.error("Cloudinary upload error:", error)
+                  reject(error)
+                } else {
+                  resolve(result as { secure_url: string })
+                }
               }
-            }
-          )
-          uploadStream.end(buffer)
-        })
+            )
+            uploadStream.end(buffer)
+          })
 
-        images.push(uploadResult.secure_url)
-      } catch (uploadError) {
-        console.error("Error uploading image to Cloudinary:", uploadError)
-        // Abort upload process on error
-        return {
-          success: false,
-          message: `Error uploading image: ${
-            uploadError instanceof Error
-              ? uploadError.message
-              : typeof uploadError === "object"
-              ? JSON.stringify(uploadError)
-              : String(uploadError)
-          }`,
+          images.push(uploadResult.secure_url)
+        } catch (uploadError) {
+          console.error("Error uploading image to Cloudinary:", uploadError)
+          // Abort upload process on error
+          return {
+            success: false,
+            message: `Error uploading image: ${
+              uploadError instanceof Error
+                ? uploadError.message
+                : typeof uploadError === "object"
+                ? JSON.stringify(uploadError)
+                : String(uploadError)
+            }`,
+          }
         }
       }
-    }
     } else {
       // Use default placeholder if no images were uploaded
       images = [`/placeholder.svg?height=600&width=400&text=${encodeURIComponent(title)}`]
@@ -130,7 +130,8 @@ export async function createArtListing(formData: FormData) {
 }
 
 export async function updateArtListing(formData: FormData) {
-  if (!(await isAdmin())) {
+  const { userId } = await auth()  // Get userId from Clerk auth
+  if (!(await isAdmin(userId ?? undefined))) {  // Pass userId to isAdmin, handle null case
     return {
       success: false,
       message: "Unauthorized. Only admins can update art listings.",
@@ -188,7 +189,8 @@ export async function updateArtListing(formData: FormData) {
 }
 
 export async function toggleFeatured(id: string) {
-  if (!(await isAdmin())) {
+  const { userId } = await auth()  // Get userId from Clerk auth
+  if (!(await isAdmin(userId ?? undefined))) {  // Pass userId to isAdmin, handle null case
     return {
       success: false,
       message: "Unauthorized. Only admins can update art listings.",
@@ -234,7 +236,8 @@ export async function toggleFeatured(id: string) {
 }
 
 export async function deleteArtListing(id: string) {
-  if (!(await isAdmin())) {
+  const { userId } = await auth()  // Get userId from Clerk auth
+  if (!(await isAdmin(userId ?? undefined))) {  // Pass userId to isAdmin, handle null case
     return {
       success: false,
       message: "Unauthorized. Only admins can delete art listings.",
@@ -275,4 +278,3 @@ export async function deleteArtListing(id: string) {
     }
   }
 }
-``

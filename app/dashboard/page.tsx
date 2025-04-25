@@ -17,6 +17,9 @@ import { deleteBlogPost } from "../actions/blog-actions"
 import { deleteTeamMember } from "../actions/team-actions"
 import { cloudinaryLoader } from "@/lib/cloudinary"
 
+// Import the new TeamManagementSection component
+import TeamManagementSection from "@/components/TeamManagementSection"
+
 // Define a type for the active tab to ensure type safety
 type ActiveTabType = "orders" | "art" | "upload" | "blog" | "team"
 
@@ -102,6 +105,9 @@ export default function Dashboard() {
     }
   }, [activeTab, router])
 
+  // Modify the useEffect that checks admin status to only check once on initial load
+  // Replace the existing useEffect for checking admin status with this:
+
   useEffect(() => {
     async function checkAdminStatus() {
       if (isLoaded && isSignedIn) {
@@ -127,11 +133,13 @@ export default function Dashboard() {
     }
 
     checkAdminStatus()
-  }, [isLoaded, isSignedIn])
+  }, [isLoaded, isSignedIn, router]) // Only run this effect when auth state changes
 
-  // Fetch data when tab changes
+  // Remove the admin check from the useEffect that fetches data when tab changes
+  // Replace the existing useEffect for fetching data with this:
+
   useEffect(() => {
-    if (isAdmin) {
+    if (!isLoading && isAdmin) {
       if (activeTab === "orders") {
         fetchOrders()
       } else if (activeTab === "art") {
@@ -142,7 +150,7 @@ export default function Dashboard() {
         fetchTeamMembers()
       }
     }
-  }, [activeTab, isAdmin])
+  }, [activeTab, isAdmin, isLoading])
 
   // Fetch orders
   const fetchOrders = async () => {
@@ -772,123 +780,8 @@ export default function Dashboard() {
     )
   }
 
-  if (activeTab === "team") {
-    return (
-      <MainLayout>
-        <div className="dashboard-page">
-          <div className="container">
-            <h1 className="page-title">Admin Dashboard</h1>
-
-            <div className="dashboard-tabs">
-              <button
-                className={`tab-button ${activeTab === ("orders" as ActiveTabType) ? "active" : ""}`}
-                onClick={() => setActiveTab("orders")}
-              >
-                Order Requests
-              </button>
-              <button
-                className={`tab-button ${activeTab === ("art" as ActiveTabType) ? "active" : ""}`}
-                onClick={() => setActiveTab("art")}
-              >
-                Art Listings
-              </button>
-              <button
-                className={`tab-button ${activeTab === ("upload" as ActiveTabType) ? "active" : ""}`}
-                onClick={() => setActiveTab("upload")}
-              >
-                Upload New Art
-              </button>
-              <button
-                className={`tab-button ${activeTab === ("blog" as ActiveTabType) ? "active" : ""}`}
-                onClick={() => setActiveTab("blog")}
-              >
-                Blog Management
-              </button>
-              <button
-                className={`tab-button ${activeTab === ("team" as ActiveTabType) ? "active" : ""}`}
-                onClick={() => setActiveTab("team")}
-              >
-                Team Management
-              </button>
-            </div>
-
-            <div className="dashboard-content">
-              <div className="team-tab">
-                <h2>Team Members</h2>
-
-                <div className="team-actions" style={{ marginBottom: "20px" }}>
-                  <button className="button" onClick={() => router.push("/dashboard/team/new")}>
-                    Add New Team Member
-                  </button>
-                </div>
-
-                <div className="team-table-container">
-                  <table className="art-table">
-                    <thead>
-                      <tr>
-                        <th>Image</th>
-                        <th>Name</th>
-                        <th>Title</th>
-                        <th>Display Order</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {teamMembers.length > 0 ? (
-                        teamMembers.map((member) => (
-                          <tr key={member.id}>
-                            <td>
-                              <div className="art-thumbnail">
-                                <Image
-                                  src={member.image || "/placeholder.svg"}
-                                  alt={member.name}
-                                  width={50}
-                                  height={50}
-                                  loader={cloudinaryLoader}
-                                />
-                              </div>
-                            </td>
-                            <td>{member.name}</td>
-                            <td>{member.title}</td>
-                            <td>{member.order}</td>
-                            <td>
-                              <div className="art-actions">
-                                <button className="action-button edit" onClick={() => handleViewTeamMember(member.id)}>
-                                  View
-                                </button>
-                                <button
-                                  className="action-button edit"
-                                  onClick={() => router.push(`/dashboard/team/edit/${member.id}`)}
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  className="action-button delete"
-                                  onClick={() => handleDeleteTeamMember(member.id)}
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={5} style={{ textAlign: "center", padding: "20px" }}>
-                            No team members found. Add your first team member!
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </MainLayout>
-    )
-  }
+  // Replace the team tab rendering in the return statement with this:
+  // Find the section that starts with {activeTab === "team" && ( and replace it with:
 
   return (
     <MainLayout>
@@ -1044,6 +937,19 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {activeTab === "team" && (
+        <div className="dashboard-content">
+          <TeamManagementSection
+            teamMembers={teamMembers}
+            onViewMember={(id) => {
+              setSelectedTeamMemberId(id)
+              setIsTeamMemberModalOpen(true)
+            }}
+            onRefresh={fetchTeamMembers}
+          />
+        </div>
+      )}
 
       {/* Edit Art Modal */}
       <EditArtModal
