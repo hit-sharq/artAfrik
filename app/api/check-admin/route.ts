@@ -18,7 +18,7 @@ export async function GET() {
       })
     }
 
-    const adminStatus = await isAdmin()
+    const adminStatus = await isAdmin(userId)
 
     // Log the result of the admin check
     console.log("Admin status result:", adminStatus)

@@ -6,10 +6,7 @@ const ADMIN_USER_IDS = process.env.ADMIN_USER_IDS
   : []
 
 // This function checks if the current user is an admin
-export async function isAdmin() {
-  // Get the current user ID from Clerk
-  const { userId } = await auth()
-
+export async function isAdmin(userId?: string) {
   if (!userId) {
     return false
   }

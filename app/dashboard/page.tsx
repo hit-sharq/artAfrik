@@ -8,15 +8,17 @@ import Image from "next/image"
 import { useAuth } from "@clerk/nextjs"
 import MainLayout from "../../components/MainLayout"
 import EditArtModal from "../../components/EditArtModal"
+import TeamMemberModal from "../../components/TeamMemberModal"
 import "./dashboard.css"
 
 // Add this near the top of the file with other imports
 import { createArtListing, toggleFeatured, deleteArtListing } from "../actions/art-actions"
 import { deleteBlogPost } from "../actions/blog-actions"
+import { deleteTeamMember } from "../actions/team-actions"
 import { cloudinaryLoader } from "@/lib/cloudinary"
 
 // Define a type for the active tab to ensure type safety
-type ActiveTabType = "orders" | "art" | "upload" | "blog"
+type ActiveTabType = "orders" | "art" | "upload" | "blog" | "team"
 
 interface ArtListing {
   id: string
@@ -51,6 +53,15 @@ interface BlogPost {
   featured: boolean
 }
 
+interface TeamMember {
+  id: string
+  name: string
+  title: string
+  bio: string
+  image: string
+  order: number
+}
+
 // Define a new interface for the file uploads with preview
 interface FileWithPreview extends File {
   preview?: string
@@ -70,6 +81,7 @@ export default function Dashboard() {
   const [orders, setOrders] = useState<Order[]>([])
   const [artListings, setArtListings] = useState<ArtListing[]>([])
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [isAdmin, setIsAdmin] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>([])
@@ -78,6 +90,10 @@ export default function Dashboard() {
   // Edit modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedArtId, setSelectedArtId] = useState("")
+
+  // Team member modal state
+  const [isTeamMemberModalOpen, setIsTeamMemberModalOpen] = useState(false)
+  const [selectedTeamMemberId, setSelectedTeamMemberId] = useState("")
 
   useEffect(() => {
     // Update the URL when tab changes
@@ -122,6 +138,8 @@ export default function Dashboard() {
         fetchArtListings()
       } else if (activeTab === "blog") {
         fetchBlogPosts()
+      } else if (activeTab === "team") {
+        fetchTeamMembers()
       }
     }
   }, [activeTab, isAdmin])
@@ -270,6 +288,23 @@ export default function Dashboard() {
     }
   }
 
+  // Fetch team members
+  const fetchTeamMembers = async () => {
+    try {
+      const response = await fetch("/api/team-members")
+      if (response.ok) {
+        const data = await response.json()
+        setTeamMembers(data)
+      } else {
+        console.error("Failed to fetch team members")
+        setTeamMembers([])
+      }
+    } catch (error) {
+      console.error("Error fetching team members:", error)
+      setTeamMembers([])
+    }
+  }
+
   // Redirect if not signed in or not an admin
   useEffect(() => {
     if (!isLoading && (!isSignedIn || !isAdmin)) {
@@ -400,9 +435,31 @@ export default function Dashboard() {
     }
   }
 
+  const handleDeleteTeamMember = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this team member? This action cannot be undone.")) {
+      try {
+        const result = await deleteTeamMember(id)
+
+        if (result.success) {
+          // Remove from local state
+          setTeamMembers((prevMembers) => prevMembers.filter((member) => member.id !== id))
+        } else {
+          console.error("Failed to delete team member:", result.message)
+        }
+      } catch (error) {
+        console.error("Error deleting team member:", error)
+      }
+    }
+  }
+
   const handleEditArt = (artId: string) => {
     setSelectedArtId(artId)
     setIsEditModalOpen(true)
+  }
+
+  const handleViewTeamMember = (teamMemberId: string) => {
+    setSelectedTeamMemberId(teamMemberId)
+    setIsTeamMemberModalOpen(true)
   }
 
   const handleEditSuccess = () => {
@@ -481,6 +538,12 @@ export default function Dashboard() {
                 onClick={() => setActiveTab("blog")}
               >
                 Blog Management
+              </button>
+              <button
+                className={`tab-button ${activeTab === ("team" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("team")}
+              >
+                Team Management
               </button>
             </div>
 
@@ -625,6 +688,12 @@ export default function Dashboard() {
               >
                 Blog Management
               </button>
+              <button
+                className={`tab-button ${activeTab === ("team" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("team")}
+              >
+                Team Management
+              </button>
             </div>
 
             <div className="dashboard-content">
@@ -703,6 +772,124 @@ export default function Dashboard() {
     )
   }
 
+  if (activeTab === "team") {
+    return (
+      <MainLayout>
+        <div className="dashboard-page">
+          <div className="container">
+            <h1 className="page-title">Admin Dashboard</h1>
+
+            <div className="dashboard-tabs">
+              <button
+                className={`tab-button ${activeTab === ("orders" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("orders")}
+              >
+                Order Requests
+              </button>
+              <button
+                className={`tab-button ${activeTab === ("art" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("art")}
+              >
+                Art Listings
+              </button>
+              <button
+                className={`tab-button ${activeTab === ("upload" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("upload")}
+              >
+                Upload New Art
+              </button>
+              <button
+                className={`tab-button ${activeTab === ("blog" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("blog")}
+              >
+                Blog Management
+              </button>
+              <button
+                className={`tab-button ${activeTab === ("team" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("team")}
+              >
+                Team Management
+              </button>
+            </div>
+
+            <div className="dashboard-content">
+              <div className="team-tab">
+                <h2>Team Members</h2>
+
+                <div className="team-actions" style={{ marginBottom: "20px" }}>
+                  <button className="button" onClick={() => router.push("/dashboard/team/new")}>
+                    Add New Team Member
+                  </button>
+                </div>
+
+                <div className="team-table-container">
+                  <table className="art-table">
+                    <thead>
+                      <tr>
+                        <th>Image</th>
+                        <th>Name</th>
+                        <th>Title</th>
+                        <th>Display Order</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {teamMembers.length > 0 ? (
+                        teamMembers.map((member) => (
+                          <tr key={member.id}>
+                            <td>
+                              <div className="art-thumbnail">
+                                <Image
+                                  src={member.image || "/placeholder.svg"}
+                                  alt={member.name}
+                                  width={50}
+                                  height={50}
+                                  loader={cloudinaryLoader}
+                                />
+                              </div>
+                            </td>
+                            <td>{member.name}</td>
+                            <td>{member.title}</td>
+                            <td>{member.order}</td>
+                            <td>
+                              <div className="art-actions">
+                                <button className="action-button edit" onClick={() => handleViewTeamMember(member.id)}>
+                                  View
+                                </button>
+                                <button
+                                  className="action-button edit"
+                                  onClick={() => router.push(`/dashboard/team/edit/${member.id}`)}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="action-button delete"
+                                  onClick={() => handleDeleteTeamMember(member.id)}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} style={{ textAlign: "center", padding: "20px" }}>
+                            No team members found. Add your first team member!
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
+
   return (
     <MainLayout>
       <div className="dashboard-page">
@@ -730,6 +917,12 @@ export default function Dashboard() {
               onClick={() => setActiveTab("blog")}
             >
               Blog Management
+            </button>
+            <button
+              className={`tab-button ${activeTab === ("team" as ActiveTabType) ? "active" : ""}`}
+              onClick={() => setActiveTab("team")}
+            >
+              Team Management
             </button>
           </div>
 
@@ -858,6 +1051,13 @@ export default function Dashboard() {
         onClose={() => setIsEditModalOpen(false)}
         artId={selectedArtId}
         onSuccess={handleEditSuccess}
+      />
+
+      {/* Team Member Modal */}
+      <TeamMemberModal
+        isOpen={isTeamMemberModalOpen}
+        onClose={() => setIsTeamMemberModalOpen(false)}
+        teamMemberId={selectedTeamMemberId}
       />
     </MainLayout>
   )
