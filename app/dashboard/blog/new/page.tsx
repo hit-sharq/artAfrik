@@ -9,6 +9,7 @@ import MainLayout from "@/components/MainLayout"
 import { createBlogPost } from "@/app/actions/blog-actions"
 import { isAdmin } from "@/lib/auth"
 import "../blog-form.css"
+import ImageUpload from "@/components/ImageUpload" // Adjust the path based on your project structure
 
 const CATEGORIES = [
   "Art History",
@@ -256,14 +257,10 @@ export default function NewBlogPost() {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="image">Featured Image URL</label>
-                  <input
-                    type="text"
-                    id="image"
-                    name="image"
+                  <ImageUpload
+                    label="Upload Featured Image"
                     value={formData.image}
-                    onChange={handleChange}
-                    placeholder="Enter image URL"
+                    onChange={(url: string) => setFormData({ ...formData, image: url })}
                   />
                 </div>
 

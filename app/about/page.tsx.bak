@@ -2,32 +2,9 @@ import MainLayout from "components/MainLayout"
 import "./about.css"
 import { getTeamMembers } from "../actions/team-actions"
 import TeamMemberImage from "components/TeamMemberImage"
-import { prisma } from "@/lib/prisma"
-
-type GalleryImage = {
-  image: string
-  title?: string
-}
-
-function selectImageByDay(images: GalleryImage[]) {
-  if (!images || images.length === 0) return null
-  const dayIndex = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % images.length
-  return images[dayIndex]
-}
 
 export default async function About() {
   const { teamMembers = [] } = await getTeamMembers()
-  const artListings = await prisma.artListing.findMany()
-  // Flatten all images from all art listings into a single array
-  const allImages: GalleryImage[] = []
-  artListings.forEach((listing) => {
-    if (listing.images && listing.images.length > 0) {
-      listing.images.forEach((img) => {
-        allImages.push({ image: img, title: listing.title })
-      })
-    }
-  })
-  const selectedImage = selectImageByDay(allImages)
 
   return (
     <MainLayout>
@@ -51,23 +28,15 @@ export default async function About() {
                 </p>
               </div>
               <div className="mission-image">
-                {selectedImage ? (
-                  <TeamMemberImage
-                    src={selectedImage.image || "/placeholder.svg?height=400&width=600"}
-                    alt={selectedImage.title || "Arts Afrik Mission"}
-                    width={600}
-                    height={400}
-                    style={{ objectFit: "contain" }}
-                  />
-                ) : (
-                  <TeamMemberImage
-                    src="/placeholder.svg?height=400&width=600"
-                    alt="Arts Afrik Sourcing"
-                    width={600}
-                    height={400}
-                    style={{ objectFit: "contain" }}
-                  />
-                )}
+                <TeamMemberImage src="/placeholder.svg?height=400&width=600" alt="Arts Afrik Mission" width={600} height={400} />
+              </div>
+            </div>
+          </section>
+
+          <section className="sourcing-section">
+            <div className="sourcing-content">
+              <div className="sourcing-image">
+                <TeamMemberImage src="/placeholder.svg?height=400&width=600" alt="Arts Afrik Sourcing" width={600} height={400} />
               </div>
               <div className="sourcing-text">
                 <h2>How We Source & Represent</h2>

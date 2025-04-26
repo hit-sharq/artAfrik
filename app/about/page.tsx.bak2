@@ -2,7 +2,17 @@ import MainLayout from "components/MainLayout"
 import "./about.css"
 import { getTeamMembers } from "../actions/team-actions"
 import TeamMemberImage from "components/TeamMemberImage"
-import { prisma } from "@/lib/prisma"
+
+async function fetchGalleryImages() {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ""}/api/art-listings`, {
+    cache: "no-store",
+  })
+  if (!res.ok) {
+    console.error("Failed to fetch gallery images")
+    return []
+  }
+  return res.json()
+}
 
 type GalleryImage = {
   image: string
@@ -17,17 +27,8 @@ function selectImageByDay(images: GalleryImage[]) {
 
 export default async function About() {
   const { teamMembers = [] } = await getTeamMembers()
-  const artListings = await prisma.artListing.findMany()
-  // Flatten all images from all art listings into a single array
-  const allImages: GalleryImage[] = []
-  artListings.forEach((listing) => {
-    if (listing.images && listing.images.length > 0) {
-      listing.images.forEach((img) => {
-        allImages.push({ image: img, title: listing.title })
-      })
-    }
-  })
-  const selectedImage = selectImageByDay(allImages)
+  const galleryImages = await fetchGalleryImages()
+  const selectedImage = selectImageByDay(galleryImages)
 
   return (
     <MainLayout>
@@ -57,16 +58,26 @@ export default async function About() {
                     alt={selectedImage.title || "Arts Afrik Mission"}
                     width={600}
                     height={400}
-                    style={{ objectFit: "contain" }}
                   />
                 ) : (
+                  <TeamMemberImage src="/placeholder.svg?height=400&width=600" alt="Arts Afrik Mission" width={600} height={400} />
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className="sourcing-section">
+            <div className="sourcing-content">
+              <div className="sourcing-image">
+                {selectedImage ? (
                   <TeamMemberImage
-                    src="/placeholder.svg?height=400&width=600"
-                    alt="Arts Afrik Sourcing"
+                    src={selectedImage.image || "/placeholder.svg?height=400&width=600"}
+                    alt={selectedImage.title || "Arts Afrik Sourcing"}
                     width={600}
                     height={400}
-                    style={{ objectFit: "contain" }}
                   />
+                ) : (
+                  <TeamMemberImage src="/placeholder.svg?height=400&width=600" alt="Arts Afrik Sourcing" width={600} height={400} />
                 )}
               </div>
               <div className="sourcing-text">

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import ImageUpload from "@/components/ImageUpload";
 
 export default function NewTeamMemberPage() {
   const [name, setName] = useState("");
@@ -69,13 +70,10 @@ export default function NewTeamMemberPage() {
           />
         </div>
         <div>
-          <label className="block mb-1">Image URL</label>
-          <input
-            type="text"
+          <ImageUpload
+            label="Upload Team Member Picture"
             value={image}
-            onChange={(e) => setImage(e.target.value)}
-            required
-            className="input input-bordered w-full"
+            onChange={setImage}
           />
         </div>
         <div>
