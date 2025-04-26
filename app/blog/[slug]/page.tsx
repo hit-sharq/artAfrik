@@ -42,21 +42,35 @@ export default function BlogPost() {
       try {
         const result = await getBlogPost(slug as string)
         if (result.success) {
-          setPost({
-            ...result.post,
-            date: new Date(result.post.date).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            }),
-          })
+          if (result.post) {
+            setPost({
+              id: result.post.id || "",
+              title: result.post.title || "",
+              slug: result.post.slug || "",
+              content: result.post.content || "",
+              excerpt: result.post.excerpt || "",
+              category: result.post.category || "",
+              author: result.post.author || "",
+              authorTitle: result.post.authorTitle ?? undefined,
+              authorImage: result.post.authorImage ?? undefined,
+              date: new Date(result.post.date).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              }),
+              image: result.post.image ?? undefined,
+              tags: result.post.tags || [],
+              featured: result.post.featured || false,
+              allowComments: result.post.allowComments || false,
+            })
+          }
 
           // Fetch related posts
           const response = await fetch("/api/blog-posts")
           if (response.ok) {
             const allPosts = await response.json()
-            const related = allPosts
-              .filter((p: any) => p.slug !== slug && p.category === result.post.category)
+          const related = allPosts
+              .filter((p: any) => p.slug !== slug && result.post && p.category === result.post.category)
               .slice(0, 3)
               .map((p: any) => ({
                 ...p,
