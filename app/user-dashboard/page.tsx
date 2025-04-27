@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@clerk/nextjs"
 import Image from "next/image"
 import Link from "next/link"
-import MainLayout from "@/components/MainLayout"
+import MainLayout from "components/MainLayout"
 import "./user-dashboard.css"
-import { cloudinaryLoader } from "@/lib/cloudinary"
+import { cloudinaryLoader } from "lib/cloudinary"
 
 type ActiveTabType = "orders" | "profile" | "wishlist" | "messages"
 
@@ -63,7 +63,6 @@ export default function UserDashboard() {
       router.push("/sign-in?redirect=/user-dashboard")
     } else if (isLoaded && isSignedIn) {
       checkAdminAndRedirect()
-      // Fetch user data
       fetchUserData()
     }
   }, [isLoaded, isSignedIn, router])
@@ -71,72 +70,15 @@ export default function UserDashboard() {
   const fetchUserData = async () => {
     setIsLoading(true)
     try {
-      // In a real implementation, these would be API calls to fetch the user's data
-      // For now, we'll use mock data
-
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 800))
-
-      // Mock orders
-      setOrders([
-        {
-          id: "ord_123",
-          artTitle: "Traditional Mask",
-          artImage: "/placeholder.svg?height=100&width=100",
-          price: 120,
-          status: "pending",
-          date: "2023-04-15",
-        },
-        {
-          id: "ord_456",
-          artTitle: "Tribal Statue",
-          artImage: "/placeholder.svg?height=100&width=100",
-          price: 150,
-          status: "shipped",
-          date: "2023-03-22",
-        },
-      ])
-
-      // Mock wishlist
-      setWishlist([
-        {
-          id: "art_789",
-          title: "Animal Figurine",
-          image: "/placeholder.svg?height=100&width=100",
-          price: 85,
-        },
-        {
-          id: "art_101",
-          title: "Decorative Bowl",
-          image: "/placeholder.svg?height=100&width=100",
-          price: 95,
-        },
-      ])
-
-      // Mock messages
-      setMessages([
-        {
-          id: "msg_123",
-          subject: "Order Inquiry",
-          message: "I'm interested in ordering multiple pieces. Do you offer any discounts for bulk orders?",
-          date: "2023-04-10",
-          replied: true,
-        },
-        {
-          id: "msg_456",
-          subject: "Shipping Question",
-          message: "How long does shipping typically take to the United States?",
-          date: "2023-03-28",
-          replied: false,
-        },
-      ])
-
-      // Mock user profile
+      // Clear mock data for orders, wishlist, messages, and profile
+      setOrders([])
+      setWishlist([])
+      setMessages([])
       setUserProfile({
-        name: "John Doe",
-        email: "john.doe@example.com",
-        phone: "+1 (234) 567-8901",
-        address: "123 Main St, Anytown, USA",
+        name: "",
+        email: "",
+        phone: "",
+        address: "",
       })
     } catch (error) {
       console.error("Error fetching user data:", error)

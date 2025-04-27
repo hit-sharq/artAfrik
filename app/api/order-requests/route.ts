@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { isAdmin } from "@/lib/auth"
+import { prisma } from "lib/prisma"
+import { isAdmin } from "lib/auth"
 
 export async function GET() {
   try {
@@ -9,6 +9,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized. Only admins can view order requests." }, { status: 401 })
     }
 
+    console.log("Fetching order requests")
     const orderRequests = await prisma.orderRequest.findMany({
       include: {
         artListing: true,
@@ -17,6 +18,7 @@ export async function GET() {
         createdAt: "desc",
       },
     })
+    console.log(`Fetched ${orderRequests.length} order requests`)
 
     return NextResponse.json({
       success: true,
