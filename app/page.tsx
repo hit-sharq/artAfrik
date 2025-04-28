@@ -7,12 +7,6 @@ import MainLayout from "../components/MainLayout"
 import "./home.css"
 import { cloudinaryLoader } from "../lib/cloudinary"
 
-interface Category {
-  name: string
-  description: string
-  image: string
-}
-
 interface Artwork {
   id: string
   title: string
@@ -25,101 +19,44 @@ interface Artwork {
 }
 
 export default function Home() {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [categoryArtworks, setCategoryArtworks] = useState<Artwork[]>([])
+  const [featuredArtworks, setFeaturedArtworks] = useState<Artwork[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
+  // Function to select artworks to display based on current date, rotating every 24 hours
+  function selectArtworksToDisplay(artworks: Artwork[], count: number): Artwork[] {
+    if (artworks.length === 0) return []
+
+    const day = new Date().getDate() // day of month 1-31
+    const startIndex = day % artworks.length
+    const selected: Artwork[] = []
+
+    for (let i = 0; i < count; i++) {
+      selected.push(artworks[(startIndex + i) % artworks.length])
+    }
+    return selected
+  }
   useEffect(() => {
-    async function fetchData() {
+    async function fetchArtworks() {
       setIsLoading(true)
       try {
-        // Fetch categories
-        const catRes = await fetch("/api/categories")
-        if (!catRes.ok) throw new Error("Failed to fetch categories")
-        const catData = await catRes.json()
-        setCategories(catData)
-
-        // Fetch all artworks from gallery
-        const artRes = await fetch("/api/art-listings")
+        // Fetch all artworks from gallery with a high limit to get all
+        const artRes = await fetch("/api/art-listings?limit=100")
         if (!artRes.ok) throw new Error("Failed to fetch gallery artworks")
         const artData: Artwork[] = await artRes.json()
 
-        // For each category, select one unique artwork by title (name)
-        const selectedArtworks: Artwork[] = []
-        const usedTitles = new Set<string>()
-
-        for (const category of catData) {
-          const artForCategory = artData.find(
-            (art) => art.woodType === category.name && !usedTitles.has(art.title)
-          )
-          if (artForCategory) {
-            selectedArtworks.push(artForCategory)
-            usedTitles.add(artForCategory.title)
-          }
-        }
-
-        setCategoryArtworks(selectedArtworks)
+        // Select 2 artworks to display, rotating every 24 hours
+        const selectedArtworks = selectArtworksToDisplay(artData, 2)
+        setFeaturedArtworks(selectedArtworks)
       } catch (error) {
-        console.error("Failed to fetch data:", error)
-        // Fallback data if API fails
-        setCategories([
-          {
-            name: "Ebony",
-            description: "Striking black wood pieces with exceptional durability",
-            image: "/images/ebony.jpg",
-          },
-          {
-            name: "Rosewood",
-            description: "Elegant sculptures with rich, deep reddish-brown tones",
-            image: "/images/rosewood.jpg",
-          },
-          {
-            name: "Mahogany",
-            description: "Beautiful reddish-brown wood with straight grain",
-            image: "/images/mahogany.jpg",
-          },
-        ])
-
-        setCategoryArtworks([
-          {
-            id: "1",
-            title: "Traditional Mask",
-            description: "Hand-carved traditional mask from West Africa",
-            price: 120,
-            woodType: "Ebony",
-            region: "West Africa",
-            size: '12" x 6" x 3"',
-            images: ["/placeholder.svg?height=400&width=300"],
-          },
-          {
-            id: "2",
-            title: "Tribal Statue",
-            description: "Authentic tribal statue from East Africa",
-            price: 150,
-            woodType: "Rosewood",
-            region: "East Africa",
-            size: '18" x 5" x 5"',
-            images: ["/placeholder.svg?height=400&width=300"],
-          },
-          {
-            id: "3",
-            title: "Animal Figurine",
-            description: "Beautifully crafted animal figurine",
-            price: 85,
-            woodType: "Mahogany",
-            region: "Central Africa",
-            size: '8" x 4" x 4"',
-            images: ["/placeholder.svg?height=400&width=300"],
-          },
-        ])
+        console.error("Failed to fetch artworks:", error)
+        setFeaturedArtworks([])
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchData()
+    fetchArtworks()
   }, [])
-
   return (
     <MainLayout>
       <section className="hero">
@@ -153,7 +90,7 @@ export default function Home() {
 
           <div className="categories-grid">
             {isLoading ? (
-              Array(3)
+              Array(2)
                 .fill(0)
                 .map((_, i) => (
                   <div className="category-card skeleton" key={i}>
@@ -162,25 +99,27 @@ export default function Home() {
                     <div className="skeleton-text short"></div>
                   </div>
                 ))
-            ) : categories.length === 0 ? (
-              <p>No categories available</p>
+            ) : featuredArtworks.length === 0 ? (
+              <p>No artworks available</p>
             ) : (
-              categories.map((category) => (
-                <div className="category-card" key={category.name}>
+              featuredArtworks.map((art) => (
+                <div className="category-card" key={art.id}>
                   <div className="category-image">
                     <Image
-                      src={category.image || "/placeholder.svg"}
-                      alt={`${category.name} Art`}
+                      src={art.images[0] || "/placeholder.svg"}
+                      alt={art.title}
                       fill
                       style={{ objectFit: "cover" }}
                       priority={true}
                       loader={cloudinaryLoader}
                     />
                   </div>
-                  <h3>{category.name}</h3>
-                  <p>{category.description}</p>
-                  <Link href={`/gallery?woodType=${category.name}`} className="button view-button">
-                    View Collection
+                  <h3>{art.title}</h3>
+                  <p>{art.description}</p>
+                  <p className="art-origin">{art.region}</p>
+                  <p className="art-price">${art.price.toFixed(2)}</p>
+                  <Link href={`/gallery/${art.id}`} className="button view-button">
+                    View Details
                   </Link>
                 </div>
               ))
@@ -198,7 +137,7 @@ export default function Home() {
 
           <div className="featured-grid">
             {isLoading ? (
-              Array(3)
+              Array(2)
                 .fill(0)
                 .map((_, i) => (
                   <div className="art-card skeleton" key={i}>
@@ -211,10 +150,10 @@ export default function Home() {
                     </div>
                   </div>
                 ))
-            ) : categoryArtworks.length === 0 ? (
+            ) : featuredArtworks.length === 0 ? (
               <p>No artworks available</p>
             ) : (
-              categoryArtworks.map((art) => (
+              featuredArtworks.map((art) => (
                 <div className="art-card" key={art.id}>
                   <div className="art-image">
                     <Image
@@ -273,3 +212,6 @@ export default function Home() {
     </MainLayout>
   )
 }
+
+
+
