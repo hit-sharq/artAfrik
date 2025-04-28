@@ -955,8 +955,8 @@ export default function Dashboard() {
               className="button"
               onClick={() => {
                 console.log("Navigating to new team member page")
-                // Use router.replace instead of push to avoid adding to history stack
-                router.push("/dashboard/team/new", { scroll: true })
+                // The correct path is /dashboard/team-members/new, not /dashboard/team/new
+                window.location.href = "/dashboard/team-members/new"
               }}
             >
               Add New Team Member

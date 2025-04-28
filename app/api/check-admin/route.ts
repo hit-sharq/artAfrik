@@ -7,7 +7,7 @@ export async function GET() {
     const { userId } = await auth()
 
     // Log the current user ID for debugging
-    console.log("Current Clerk user ID:", userId)
+    console.log("API: Current Clerk user ID:", userId)
 
     // If no user is authenticated, return early
     if (!userId) {
@@ -18,17 +18,26 @@ export async function GET() {
       })
     }
 
-    const adminStatus = await isAdmin(userId)
+    try {
+      const adminStatus = await isAdmin(userId)
 
-    // Log the result of the admin check
-    console.log("Admin status result:", adminStatus)
+      // Log the result of the admin check
+      console.log("API: Admin status result:", adminStatus)
 
-    return NextResponse.json({
-      isAdmin: adminStatus,
-      userId: userId, // Include the userId in the response for debugging
-    })
+      return NextResponse.json({
+        isAdmin: adminStatus,
+        userId: userId, // Include the userId in the response for debugging
+      })
+    } catch (error) {
+      console.error("API: Error checking admin status:", error)
+      return NextResponse.json({
+        isAdmin: false,
+        error: "Error checking admin status",
+        userId: userId,
+      })
+    }
   } catch (error) {
-    console.error("Error in check-admin API:", error)
+    console.error("API: Error in check-admin API:", error)
     return NextResponse.json(
       {
         isAdmin: false,

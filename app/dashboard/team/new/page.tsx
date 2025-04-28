@@ -83,7 +83,8 @@ export default function NewTeamMember() {
         setSuccess("Team member created successfully!")
         // Redirect after a short delay
         setTimeout(() => {
-          router.push("/dashboard?tab=team")
+          // Use window.location for more reliable navigation
+          window.location.href = "/dashboard?tab=team"
         }, 2000)
       } else {
         setError(result.message || "Failed to create team member")

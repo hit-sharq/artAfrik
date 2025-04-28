@@ -116,7 +116,8 @@ export default function EditTeamMember() {
         setSuccess("Team member updated successfully!")
         // Redirect after a short delay
         setTimeout(() => {
-          router.push("/dashboard?tab=team")
+          // Use window.location for more reliable navigation
+          window.location.href = "/dashboard?tab=team"
         }, 2000)
       } else {
         setError(result.message || "Failed to update team member")
