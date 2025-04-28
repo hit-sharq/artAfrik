@@ -17,9 +17,6 @@ import { deleteBlogPost } from "../actions/blog-actions"
 import { deleteTeamMember } from "../actions/team-actions"
 import { cloudinaryLoader } from "@/lib/cloudinary"
 
-// Import the new TeamManagementSection component
-import TeamManagementSection from "@/components/TeamManagementSection"
-
 // Define a type for the active tab to ensure type safety
 type ActiveTabType = "orders" | "art" | "upload" | "blog" | "team"
 
@@ -99,8 +96,9 @@ export default function Dashboard() {
   const [selectedTeamMemberId, setSelectedTeamMemberId] = useState("")
 
   useEffect(() => {
-    // Update the URL when tab changes
-    if (activeTab) {
+    // Only update the URL when tab changes if we're on the dashboard page
+    // This prevents overriding navigation to other pages
+    if (activeTab && window.location.pathname === "/dashboard") {
       router.push(`/dashboard?tab=${activeTab}`, { scroll: false })
     }
   }, [activeTab, router])
@@ -116,9 +114,15 @@ export default function Dashboard() {
           const response = await fetch("/api/check-admin")
           const data = await response.json()
           console.log("Admin check response:", data)
+          console.log("User ID from response:", data.userId)
+
           setIsAdmin(data.isAdmin)
+
           if (!data.isAdmin) {
+            console.log("User is not an admin, redirecting to user dashboard")
             router.push("/user-dashboard")
+          } else {
+            console.log("User is an admin, staying on admin dashboard")
           }
         } catch (error) {
           console.error("Error checking admin status:", error)
@@ -133,7 +137,7 @@ export default function Dashboard() {
     }
 
     checkAdminStatus()
-  }, [isLoaded, isSignedIn, router]) // Only run this effect when auth state changes
+  }, [isLoaded, isSignedIn, router])
 
   // Remove the admin check from the useEffect that fetches data when tab changes
   // Replace the existing useEffect for fetching data with this:
@@ -314,11 +318,15 @@ export default function Dashboard() {
   }
 
   // Redirect if not signed in or not an admin
+  // Remove or comment out the second useEffect that redirects to sign-in
+  // This avoids conflicting redirects
+  /*
   useEffect(() => {
     if (!isLoading && (!isSignedIn || !isAdmin)) {
       router.push("/sign-in?redirect=/dashboard")
     }
   }, [isLoading, isSignedIn, isAdmin, router])
+  */
 
   // Add the file upload handler
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -939,15 +947,79 @@ export default function Dashboard() {
       </div>
 
       {activeTab === "team" && (
-        <div className="dashboard-content">
-          <TeamManagementSection
-            teamMembers={teamMembers}
-            onViewMember={(id) => {
-              setSelectedTeamMemberId(id)
-              setIsTeamMemberModalOpen(true)
-            }}
-            onRefresh={fetchTeamMembers}
-          />
+        <div className="team-tab">
+          <h2>Team Members</h2>
+
+          <div className="team-actions" style={{ marginBottom: "20px" }}>
+            <button
+              className="button"
+              onClick={() => {
+                console.log("Navigating to new team member page")
+                // Use router.replace instead of push to avoid adding to history stack
+                router.push("/dashboard/team/new", { scroll: true })
+              }}
+            >
+              Add New Team Member
+            </button>
+          </div>
+
+          <div className="team-table-container">
+            <table className="art-table">
+              <thead>
+                <tr>
+                  <th>Image</th>
+                  <th>Name</th>
+                  <th>Title</th>
+                  <th>Display Order</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {teamMembers.length > 0 ? (
+                  teamMembers.map((member) => (
+                    <tr key={member.id}>
+                      <td>
+                        <div className="art-thumbnail">
+                          <Image
+                            src={member.image || "/placeholder.svg"}
+                            alt={member.name}
+                            width={50}
+                            height={50}
+                            loader={cloudinaryLoader}
+                          />
+                        </div>
+                      </td>
+                      <td>{member.name}</td>
+                      <td>{member.title}</td>
+                      <td>{member.order}</td>
+                      <td>
+                        <div className="art-actions">
+                          <button className="action-button edit" onClick={() => handleViewTeamMember(member.id)}>
+                            View
+                          </button>
+                          <button
+                            className="action-button feature"
+                            onClick={() => router.push(`/dashboard/team/edit/${member.id}`)}
+                          >
+                            Edit
+                          </button>
+                          <button className="action-button delete" onClick={() => handleDeleteTeamMember(member.id)}>
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: "center", padding: "20px" }}>
+                      No team members found. Add your first team member!
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
