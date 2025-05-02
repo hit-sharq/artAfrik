@@ -27,12 +27,13 @@ export default function Footer() {
                 <i className="fab fa-twitter"></i>
               </a>
               <a
-                href="https://facebook.com/artsafrik"
+              //whatsapp link
+                href="https://wa.me/+25492687584"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="social-link"
               >
-                <i className="fab fa-facebook-f"></i>
+                <i className="fab fa-whatsapp"></i>
               </a>
             </div>
           </div>
@@ -75,8 +76,8 @@ export default function Footer() {
 
           <div className="footer-section">
             <h3>Contact Us</h3>
-            <p>Email: info@artsafrik.com</p>
-            <p>Phone: +123 456 7890</p>
+            <p>Email: artafrik.gallery@gmail.com</p>
+            <p>Phone: +254 794 773 452</p>
             <p>Hours: Monday - Friday, 9am - 5pm</p>
           </div>
         </div>

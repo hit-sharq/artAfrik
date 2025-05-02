@@ -283,17 +283,19 @@ export default function Contact() {
                   </a>
 
                   <a
-                    href="https://facebook.com/artsafrik"
+                    href="https://wa.me/+25492687584"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="social-button facebook"
-                    aria-label="Visit our Facebook page"
+                    className="social-button whatsapp"
+                    aria-label="Visit our WhatsApp page"
+
                   >
                     <span className="social-icon">
-                      <i className="fab fa-facebook-f"></i>
+                      <i className="fab fa-whatsapp"></i>
                     </span>
-                    <span className="social-name">Facebook</span>
-                  </a>
+                    <span className="social-name">WhatsApp</span> 
+                  </a>  
+
                 </div>
               </div>
 
@@ -308,7 +310,8 @@ export default function Contact() {
                 <div className="detail-item">
                   <strong>Phone:</strong>
                   <p>
-                    <a href="tel:+1234567890">+123 456 7890</a>
+                    <a href="tel:+254 758 251 399">+254 758 251 399</a> |{" "}
+                    <a href="tel:+254 794 773 452">+254 794 773 452</a>
                   </p>
                 </div>
                 <div className="detail-item">
