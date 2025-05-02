@@ -19,22 +19,28 @@ interface Artwork {
 }
 
 export default function Home() {
+  const [categoryArtworks, setCategoryArtworks] = useState<Artwork[]>([])
   const [featuredArtworks, setFeaturedArtworks] = useState<Artwork[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   // Function to select artworks to display based on current date, rotating every 24 hours
-  function selectArtworksToDisplay(artworks: Artwork[], count: number): Artwork[] {
+  function selectArtworksToDisplay(artworks: Artwork[], count: number, excludeIds: string[] = []): Artwork[] {
     if (artworks.length === 0) return []
 
+    // Filter out artworks with ids in excludeIds
+    const filteredArtworks = artworks.filter(art => !excludeIds.includes(art.id))
+    if (filteredArtworks.length === 0) return []
+
     const day = new Date().getDate() // day of month 1-31
-    const startIndex = day % artworks.length
+    const startIndex = day % filteredArtworks.length
     const selected: Artwork[] = []
 
     for (let i = 0; i < count; i++) {
-      selected.push(artworks[(startIndex + i) % artworks.length])
+      selected.push(filteredArtworks[(startIndex + i) % filteredArtworks.length])
     }
     return selected
   }
+
   useEffect(() => {
     async function fetchArtworks() {
       setIsLoading(true)
@@ -44,11 +50,16 @@ export default function Home() {
         if (!artRes.ok) throw new Error("Failed to fetch gallery artworks")
         const artData: Artwork[] = await artRes.json()
 
-        // Select 2 artworks to display, rotating every 24 hours
-        const selectedArtworks = selectArtworksToDisplay(artData, 2)
-        setFeaturedArtworks(selectedArtworks)
+        // Select 2 artworks for categories section
+        const selectedCategoryArtworks = selectArtworksToDisplay(artData, 2)
+        // Select 2 artworks for featured section excluding those selected for categories
+        const selectedFeaturedArtworks = selectArtworksToDisplay(artData, 2, selectedCategoryArtworks.map(a => a.id))
+
+        setCategoryArtworks(selectedCategoryArtworks)
+        setFeaturedArtworks(selectedFeaturedArtworks)
       } catch (error) {
         console.error("Failed to fetch artworks:", error)
+        setCategoryArtworks([])
         setFeaturedArtworks([])
       } finally {
         setIsLoading(false)
@@ -57,6 +68,7 @@ export default function Home() {
 
     fetchArtworks()
   }, [])
+
   return (
     <MainLayout>
       <section className="hero">
@@ -99,10 +111,10 @@ export default function Home() {
                     <div className="skeleton-text short"></div>
                   </div>
                 ))
-            ) : featuredArtworks.length === 0 ? (
+            ) : categoryArtworks.length === 0 ? (
               <p>No artworks available</p>
             ) : (
-              featuredArtworks.map((art) => (
+              categoryArtworks.map((art) => (
                 <div className="category-card" key={art.id}>
                   <div className="category-image">
                     <Image
@@ -212,6 +224,3 @@ export default function Home() {
     </MainLayout>
   )
 }
-
-
-

@@ -2,7 +2,7 @@ import MainLayout from "components/MainLayout"
 import "./about.css"
 import { getTeamMembers } from "../actions/team-actions"
 import TeamMemberImage from "components/TeamMemberImage"
-import { prisma } from "@/lib/prisma"
+import { prisma } from "lib/prisma"
 
 type GalleryImage = {
   image: string

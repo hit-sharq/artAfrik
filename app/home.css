@@ -18,7 +18,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url("/images/hero-pattern.png");
+  /* Removed missing hero-pattern.png to fix 404 error */
+  /* background-image: url("/images/hero-pattern.png"); */
   background-size: cover;
   opacity: 0.1;
   z-index: 1;
