@@ -1,52 +1,118 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎨 Arts Afrik
 
-## Getting Started
+**Arts Afrik** is a full-stack web platform that curates and sells authentic African artwork — including paintings, carvings, masks, and sculptures — connecting collectors worldwide with talented African artists.
 
-First, run the development server:
+## 🌍 Vision
 
-```bash
+To preserve and promote Africa's cultural legacy by giving global visibility to contemporary and traditional African art.
+
+---
+
+## 🚀 Tech Stack
+
+### Frontend
+- **Next.js** with **TypeScript**
+- **CSS Modules** or **Tailwind CSS**
+- **Cloudinary** for image hosting
+- **React Hook Form** + **Zod** for validation
+
+### Backend
+- **Node.js** + **Prisma**
+- **PostgreSQL** (hosted on Supabase or Railway)
+- **Authentication**: Clerk or NextAuth.js
+
+### Deployment
+- **Vercel** (Frontend)
+- **Supabase** (Database & Auth)
+
+---
+
+## 🖼️ Core Features
+
+### Public Pages
+- **Home** – Welcome message, featured art, and call-to-action
+- **About** – Story of Arts Afrik and mission
+- **Listings** – All art pieces with search and filters
+- **Contact** – Inquiry form for potential buyers or partners
+
+### Authenticated Dashboard
+- **Admin Login** – Secure entry to the admin panel
+- **Add/Edit Artworks** – Upload high-res images, metadata (title, category, price, material)
+- **Mark as Featured or Sold**
+- **View Inquiries** – Messages from interested users
+
+---
+
+## 📁 Folder Structure
+
+arts-afrik/
+├── app/ # Next.js routes
+│ ├── dashboard/ # Admin dashboard
+│ ├── listings/ # Art listings
+│ ├── api/ # API routes
+├── components/ # UI components
+├── prisma/ # Prisma schema & migrations
+├── public/ # Static assets
+├── lib/ # Utility functions
+├── styles/ # Global and module CSS
+
+yaml
+Copy
+Edit
+
+---
+
+## 🧪 Setup & Installation
+
+1. **Clone the repo**  
+   ```bash
+   git clone https://github.com/your-username/arts-afrik.git
+   cd arts-afrik
+Install dependencies
+
+bash
+Copy
+Edit
+npm install
+Setup .env file
+
+env
+Copy
+Edit
+DATABASE_URL=postgresql://...
+CLOUDINARY_URL=...
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
+CLERK_SECRET_KEY=...
+Run migrations
+
+bash
+Copy
+Edit
+npx prisma migrate dev --name init
+Start development server
+
+bash
+Copy
+Edit
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+*🌟 Contributing*
+================
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+We welcome community contributions! To contribute:
 
-## Learn More
+Fork the repo
 
-To learn more about Next.js, take a look at the following resources:
+Create a branch
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Submit a PR with your changes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+📜 License
+This project is licensed under the MIT License.
 
-## Deploy on Vercel
+👤 Author
+Joshua Mwendwa – Software Engineer & Founder of Arts Afrik
+LinkedIn https://www.linkedin.com/in/lee-joshua-b183b5287/ | GitHub https://github.com/hit-sharq
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## Environment Variables
-
-This project requires the following environment variables to be set in a `.env` file at the root of the project:
-
-- `DATABASE_URL`: Your database connection string for Prisma.
-- `ADMIN_USER_IDS`: A comma-separated list of Clerk user IDs who should have admin privileges.
-
-Example `.env` file:
-
-```
-DATABASE_URL="your_database_connection_string_here"
-ADMIN_USER_IDS="userId1,userId2"
-```
-
-Make sure to replace the placeholder values with your actual database URL and admin user IDs.
