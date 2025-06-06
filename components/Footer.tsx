@@ -78,7 +78,7 @@ export default function Footer() {
             <h3>Contact Us</h3>
             <p>Email: artafrik.gallery@gmail.com</p>
             <p>Phone: +254 794 773 452</p>
-            <p>Hours: Monday - Friday, 9am - 5pm</p>
+            <p>Hours: Monday - Friday, 8am - 8pm</p>
           </div>
         </div>
 
