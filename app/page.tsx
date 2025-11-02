@@ -12,7 +12,12 @@ interface Artwork {
   title: string
   description: string
   price: number
-  woodType: string
+  category: {
+    id: string
+    name: string
+    slug: string
+  }
+  material?: string
   region: string
   size: string
   images: string[]
@@ -50,10 +55,10 @@ export default function Home() {
         if (!artRes.ok) throw new Error("Failed to fetch gallery artworks")
         const artData: Artwork[] = await artRes.json()
 
-        // Select 2 artworks for categories section
-        const selectedCategoryArtworks = selectArtworksToDisplay(artData, 2)
-        // Select 2 artworks for featured section excluding those selected for categories
-        const selectedFeaturedArtworks = selectArtworksToDisplay(artData, 2, selectedCategoryArtworks.map(a => a.id))
+        // Select up to 2 artworks for categories section
+        const selectedCategoryArtworks = selectArtworksToDisplay(artData, Math.min(2, artData.length))
+        // Select up to 2 artworks for featured section excluding those selected for categories
+        const selectedFeaturedArtworks = selectArtworksToDisplay(artData, Math.min(2, artData.length - selectedCategoryArtworks.length), selectedCategoryArtworks.map(a => a.id))
 
         setCategoryArtworks(selectedCategoryArtworks)
         setFeaturedArtworks(selectedFeaturedArtworks)
@@ -74,11 +79,10 @@ export default function Home() {
       <section className="hero">
         <div className="container">
           <div className="hero-content">
-            <h1>Discover Authentic African Art</h1>
+            <h1>Discover Authentic Maasai Market Goods</h1>
             <p className="slogan">"Name it, we have it!"</p>
             <p className="hero-description">
-              Arts Afrik connects you with traditional African art and curios, sourced directly from skilled artisans
-              across the continent.
+              Arts Afrik brings the vibrant spirit of Kenya's Maasai Market to the digital world. We partner directly with local artisans to showcase authentic handmade crafts including beadwork, textiles, jewelry, paintings, home décor, carvings, masks, sculptures, and other handcrafted African art that embody the soul of African design.
             </p>
             <div className="hero-buttons">
               <Link href="/gallery" className="button primary-button">
@@ -96,8 +100,7 @@ export default function Home() {
         <div className="container">
           <h2 className="section-title">Explore Our Categories</h2>
           <p className="section-subtitle">
-            Discover our collection of handcrafted African art pieces, each with unique cultural significance and
-            artistic excellence.
+            Discover our collection of handcrafted Maasai Market goods and African art pieces, from colorful Maasai beadwork and hand-carved sculptures to woven baskets, textiles, jewelry, paintings, home décor, carvings, masks, sculptures, and traditional crafts that embody the soul of African design.
           </p>
 
           <div className="categories-grid">
@@ -144,7 +147,7 @@ export default function Home() {
         <div className="container">
           <h2 className="section-title">Featured Artworks by Category</h2>
           <p className="section-subtitle">
-            Unique artworks from each category, sourced from the gallery.
+            Unique Maasai Market goods and artworks from each category, showcasing the rich diversity of African craftsmanship including beadwork, textiles, jewelry, paintings, home décor, carvings, masks, sculptures, and other handcrafted art.
           </p>
 
           <div className="featured-grid">
@@ -166,8 +169,8 @@ export default function Home() {
               <p>No artworks available</p>
             ) : (
               featuredArtworks.map((art) => (
-                <div className="art-card" key={art.id}>
-                  <div className="art-image">
+                <div className="category-card" key={art.id}>
+                  <div className="category-image">
                     <Image
                       src={art.images[0] || "/placeholder.svg"}
                       alt={art.title}
@@ -177,14 +180,13 @@ export default function Home() {
                       loader={cloudinaryLoader}
                     />
                   </div>
-                  <div className="art-info">
-                    <h3>{art.title}</h3>
-                    <p className="art-origin">{art.region}</p>
-                    <p className="art-price">${art.price.toFixed(2)}</p>
-                    <Link href={`/gallery/${art.id}`} className="button view-button">
-                      View Details
-                    </Link>
-                  </div>
+                  <h3>{art.title}</h3>
+                  <p>{art.description}</p>
+                  <p className="art-origin">{art.region}</p>
+                  <p className="art-price">${art.price.toFixed(2)}</p>
+                  <Link href={`/gallery/${art.id}`} className="button view-button">
+                    View Details
+                  </Link>
                 </div>
               ))
             )}
@@ -198,12 +200,13 @@ export default function Home() {
             <div className="about-preview-text">
               <h2 className="section-title">About Arts Afrik</h2>
               <p>
-                Arts Afrik is dedicated to showcasing the rich artistic heritage of Africa. We work directly with
-                artisans to bring authentic, handcrafted pieces to art lovers around the world.
+                Arts Afrik brings the vibrant spirit of Kenya's Maasai Market to the digital world. We partner directly with local artisans, creators, and cooperatives across Kenya to showcase authentic handmade crafts and traditional African art including beadwork, textiles, jewelry, paintings, home décor, carvings, masks, sculptures, and other handcrafted goods.
               </p>
               <p>
-                Each piece tells a story of cultural significance, artistic skill, and the natural beauty of African
-                materials. Our mission is to support local artisans while preserving traditional craftsmanship.
+                Each piece tells a story of cultural significance, artistic skill, and the natural beauty of African materials. Our mission is to empower artisans, preserve culture, and share African artistry with the world.
+              </p>
+              <p>
+                Our platform includes a comprehensive admin dashboard where administrators can manage art listings, process order requests, create and edit blog posts, and add team members. The admin interface provides full control over content and operations.
               </p>
               <Link href="/about" className="button primary-button">
                 Learn More About Us

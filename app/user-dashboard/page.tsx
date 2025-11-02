@@ -44,25 +44,9 @@ export default function UserDashboard() {
   })
 
   useEffect(() => {
-    async function checkAdminAndRedirect() {
-      if (isLoaded && isSignedIn) {
-        try {
-          const response = await fetch("/api/check-admin")
-          const data = await response.json()
-          if (data.isAdmin) {
-            router.push("/dashboard")
-            return
-          }
-        } catch (error) {
-          console.error("Error checking admin status:", error)
-        }
-      }
-    }
-
     if (isLoaded && !isSignedIn) {
       router.push("/sign-in?redirect=/user-dashboard")
     } else if (isLoaded && isSignedIn) {
-      checkAdminAndRedirect()
       fetchUserData()
     }
   }, [isLoaded, isSignedIn, router])
@@ -70,7 +54,7 @@ export default function UserDashboard() {
   const fetchUserData = async () => {
     setIsLoading(true)
     try {
-      // Clear mock data for orders, wishlist, messages, and profile
+      // No mock data - rely on database
       setOrders([])
       setWishlist([])
       setMessages([])

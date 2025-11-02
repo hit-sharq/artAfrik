@@ -18,12 +18,17 @@ import { deleteTeamMember } from "../actions/team-actions"
 import { cloudinaryLoader } from "@/lib/cloudinary"
 
 // Define a type for the active tab to ensure type safety
-type ActiveTabType = "orders" | "art" | "upload" | "blog" | "team"
+type ActiveTabType = "orders" | "art" | "upload" | "blog" | "team" | "categories"
 
 interface ArtListing {
   id: string
   title: string
-  woodType: string
+  category: {
+    id: string
+    name: string
+    slug: string
+  }
+  material?: string
   region: string
   price: number
   featured: boolean
@@ -82,6 +87,7 @@ export default function Dashboard() {
   const [artListings, setArtListings] = useState<ArtListing[]>([])
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [categories, setCategories] = useState<any[]>([])
   const [isAdmin, setIsAdmin] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>([])
@@ -152,6 +158,10 @@ export default function Dashboard() {
         fetchBlogPosts()
       } else if (activeTab === "team") {
         fetchTeamMembers()
+      } else if (activeTab === "categories") {
+        fetchCategories()
+      } else if (activeTab === "upload") {
+        fetchCategories()
       }
     }
   }, [activeTab, isAdmin, isLoading])
@@ -165,60 +175,13 @@ export default function Dashboard() {
         setOrders(data.orders || [])
       } else {
         console.error("Failed to fetch orders")
-        // Fallback to mock data for demo
-        setOrders([
-          {
-            id: "1",
-            name: "John Smith",
-            email: "john@example.com",
-            location: "New York, USA",
-            artTitle: "Traditional Mask",
-            status: "pending",
-            date: "2023-05-15",
-          },
-          {
-            id: "2",
-            name: "Sarah Johnson",
-            email: "sarah@example.com",
-            location: "London, UK",
-            artTitle: "Tribal Statue",
-            status: "approved",
-            date: "2023-05-12",
-          },
-          {
-            id: "3",
-            name: "Michael Brown",
-            email: "michael@example.com",
-            location: "Toronto, Canada",
-            artTitle: "Animal Figurine",
-            status: "shipped",
-            date: "2023-05-10",
-          },
-        ])
+        // No fallback mock data - rely on database
+        setOrders([])
       }
     } catch (error) {
       console.error("Error fetching orders:", error)
-      // Fallback to mock data
-      setOrders([
-        {
-          id: "1",
-          name: "John Smith",
-          email: "john@example.com",
-          location: "New York, USA",
-          artTitle: "Traditional Mask",
-          status: "pending",
-          date: "2023-05-15",
-        },
-        {
-          id: "2",
-          name: "Sarah Johnson",
-          email: "sarah@example.com",
-          location: "London, UK",
-          artTitle: "Tribal Statue",
-          status: "approved",
-          date: "2023-05-12",
-        },
-      ])
+      // No fallback mock data - rely on database
+      setOrders([])
     }
   }
 
@@ -235,42 +198,13 @@ export default function Dashboard() {
         setArtListings(formattedData)
       } else {
         console.error("Failed to fetch art listings")
-        // Fallback to mock data
-        setArtListings([
-          {
-            id: "1",
-            title: "Traditional Mask",
-            woodType: "Ebony",
-            region: "West Africa",
-            price: 120,
-            featured: true,
-            image: "/placeholder.svg?height=100&width=100",
-          },
-          {
-            id: "2",
-            title: "Tribal Statue",
-            woodType: "Rosewood",
-            region: "East Africa",
-            price: 150,
-            featured: false,
-            image: "/placeholder.svg?height=100&width=100",
-          },
-        ])
+        // No fallback mock data - rely on database
+        setArtListings([])
       }
     } catch (error) {
       console.error("Error fetching art listings:", error)
-      // Fallback to mock data
-      setArtListings([
-        {
-          id: "1",
-          title: "Traditional Mask",
-          woodType: "Ebony",
-          region: "West Africa",
-          price: 120,
-          featured: true,
-          image: "/placeholder.svg?height=100&width=100",
-        },
-      ])
+      // No fallback mock data - rely on database
+      setArtListings([])
     }
   }
 
@@ -314,6 +248,23 @@ export default function Dashboard() {
     } catch (error) {
       console.error("Error fetching team members:", error)
       setTeamMembers([])
+    }
+  }
+
+  // Fetch categories
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch("/api/categories")
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data)
+      } else {
+        console.error("Failed to fetch categories")
+        setCategories([])
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error)
+      setCategories([])
     }
   }
 
@@ -468,6 +419,25 @@ export default function Dashboard() {
     }
   }
 
+  const handleDeleteCategory = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this category? This action cannot be undone.")) {
+      try {
+        const response = await fetch(`/api/categories/${id}`, {
+          method: "DELETE",
+        })
+
+        if (response.ok) {
+          // Remove from local state
+          setCategories((prevCategories) => prevCategories.filter((category) => category.id !== id))
+        } else {
+          console.error("Failed to delete category")
+        }
+      } catch (error) {
+        console.error("Error deleting category:", error)
+      }
+    }
+  }
+
   const handleEditArt = (artId: string) => {
     setSelectedArtId(artId)
     setIsEditModalOpen(true)
@@ -580,13 +550,14 @@ export default function Dashboard() {
 
                   <div className="form-row">
                     <div className="form-group">
-                      <label htmlFor="woodType">Wood Type</label>
-                      <select id="woodType" name="woodType" required>
-                        <option value="">Select Wood Type</option>
-                        <option value="Ebony">Ebony</option>
-                        <option value="Rosewood">Rosewood</option>
-                        <option value="Mahogany">Mahogany</option>
-                        <option value="Other">Other</option>
+                      <label htmlFor="categoryId">Category</label>
+                      <select id="categoryId" name="categoryId" required>
+                        <option value="">Select Category</option>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
@@ -797,37 +768,109 @@ export default function Dashboard() {
         <div className="container">
           <h1 className="page-title">Admin Dashboard</h1>
 
-          <div className="dashboard-tabs">
-            <button
-              className={`tab-button ${activeTab === "orders" ? "active" : ""}`}
-              onClick={() => setActiveTab("orders")}
-            >
-              Order Requests
-            </button>
-            <button className={`tab-button ${activeTab === "art" ? "active" : ""}`} onClick={() => setActiveTab("art")}>
-              Art Listings
-            </button>
-            <button
-              className={`tab-button ${activeTab === ("upload" as ActiveTabType) ? "active" : ""}`}
-              onClick={() => setActiveTab("upload")}
-            >
-              Upload New Art
-            </button>
-            <button
-              className={`tab-button ${activeTab === ("blog" as ActiveTabType) ? "active" : ""}`}
-              onClick={() => setActiveTab("blog")}
-            >
-              Blog Management
-            </button>
-            <button
-              className={`tab-button ${activeTab === ("team" as ActiveTabType) ? "active" : ""}`}
-              onClick={() => setActiveTab("team")}
-            >
-              Team Management
-            </button>
-          </div>
+            <div className="dashboard-tabs">
+              <button
+                className={`tab-button ${activeTab === "orders" ? "active" : ""}`}
+                onClick={() => setActiveTab("orders")}
+              >
+                Order Requests
+              </button>
+              <button className={`tab-button ${activeTab === "art" ? "active" : ""}`} onClick={() => setActiveTab("art")}>
+                Art Listings
+              </button>
+              <button
+                className={`tab-button ${activeTab === ("upload" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("upload")}
+              >
+                Upload New Art
+              </button>
+              <button
+                className={`tab-button ${activeTab === ("blog" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("blog")}
+              >
+                Blog Management
+              </button>
+              <button
+                className={`tab-button ${activeTab === ("team" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("team")}
+              >
+                Team Management
+              </button>
+              <button
+                className={`tab-button ${activeTab === ("categories" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("categories")}
+              >
+                Categories
+              </button>
+            </div>
 
           <div className="dashboard-content">
+            {activeTab === "categories" && (
+              <div className="categories-tab">
+                <h2>Categories</h2>
+
+                <div className="categories-actions">
+                  <button className="button" onClick={() => router.push("/dashboard/categories/new")}>
+                    Create New Category
+                  </button>
+                </div>
+
+                <div className="categories-table-container">
+                  <table className="categories-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Slug</th>
+                        <th>Description</th>
+                        <th>Order</th>
+                        <th>Active</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {categories.length > 0 ? (
+                        categories.map((category) => (
+                          <tr key={category.id}>
+                            <td>{category.name}</td>
+                            <td>{category.slug}</td>
+                            <td>{category.description}</td>
+                            <td>{category.order}</td>
+                            <td>
+                              <span className={`status-badge ${category.isActive ? "active" : "inactive"}`}>
+                                {category.isActive ? "Active" : "Inactive"}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="category-actions">
+                                <button
+                                  className="action-button edit"
+                                  onClick={() => router.push(`/dashboard/categories/edit/${category.id}`)}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="action-button delete"
+                                  onClick={() => handleDeleteCategory(category.id)}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={6} style={{ textAlign: "center", padding: "20px" }}>
+                            No categories found. Create your first category!
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             {activeTab === "orders" && (
               <div className="orders-tab">
                 <h2>Order Requests</h2>
@@ -892,7 +935,7 @@ export default function Dashboard() {
                       <tr>
                         <th>Image</th>
                         <th>Title</th>
-                        <th>Wood Type</th>
+                        <th>Category</th>
                         <th>Region</th>
                         <th>Price</th>
                         <th>Featured</th>
@@ -914,7 +957,7 @@ export default function Dashboard() {
                             </div>
                           </td>
                           <td>{art.title}</td>
-                          <td>{art.woodType}</td>
+                          <td>{art.category.name}</td>
                           <td>{art.region}</td>
                           <td>${art.price.toFixed(2)}</td>
                           <td>

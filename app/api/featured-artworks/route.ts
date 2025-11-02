@@ -10,7 +10,7 @@ export async function GET() {
         title: true,
         description: true,
         price: true,
-        woodType: true,
+        category: true,
         region: true,
         size: true,
         images: true,

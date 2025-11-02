@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
@@ -14,26 +14,20 @@ import "./order-form.css"
 // Import the cloudinaryLoader
 import { cloudinaryLoader } from "@/lib/cloudinary"
 
-// Mock data for art listings
-const mockArtListings = [
-  {
-    id: "1",
-    title: "Traditional Mask",
-    woodType: "Ebony",
-    region: "West Africa",
-    price: 120,
-    image: "/placeholder.svg?height=400&width=300",
-  },
-  {
-    id: "2",
-    title: "Tribal Statue",
-    woodType: "Rosewood",
-    region: "East Africa",
-    price: 150,
-    image: "/placeholder.svg?height=400&width=300",
-  },
-  // Add more mock data as needed
-]
+interface ArtListing {
+  id: string
+  title: string
+  category: {
+    id: string
+    name: string
+    slug: string
+  }
+  material?: string
+  region: string
+  price: number
+  image: string
+  images: string[]
+}
 
 export default function OrderRequest() {
   const { id } = useParams()
@@ -50,9 +44,43 @@ export default function OrderRequest() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [art, setArt] = useState<ArtListing | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Find the art piece with the matching ID
-  const art = mockArtListings.find((item) => item.id === id)
+  useEffect(() => {
+    const fetchArt = async () => {
+      try {
+        const response = await fetch(`/api/art-listings/${id}`)
+        if (response.ok) {
+          const artData = await response.json()
+          setArt(artData)
+        } else {
+          console.error("Failed to fetch art listing")
+        }
+      } catch (error) {
+        console.error("Error fetching art:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (id) {
+      fetchArt()
+    }
+  }, [id])
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="container">
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p>Loading art piece...</p>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
 
   if (!art) {
     return (
@@ -174,8 +202,13 @@ export default function OrderRequest() {
               <div className="art-details">
                 <h2>{art.title}</h2>
                 <p>
-                  <strong>Wood Type:</strong> {art.woodType}
+                  <strong>Category:</strong> {art.category.name}
                 </p>
+                {art.material && (
+                  <p>
+                    <strong>Material:</strong> {art.material}
+                  </p>
+                )}
                 <p>
                   <strong>Origin:</strong> {art.region}
                 </p>

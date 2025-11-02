@@ -1,5 +1,7 @@
 .about-page {
   padding: 60px 0;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
 }
 
 .mission-section,
@@ -15,28 +17,47 @@
   grid-template-columns: 1fr 1fr;
   gap: 40px;
   align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .mission-text h2,
 .sourcing-text h2,
 .value-section h2,
 .team-section h2 {
-  color: var(--primary-color);
+  color: #2c3e50;
   margin-bottom: 20px;
-  font-size: 1.8rem;
+  font-size: 2.2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .mission-text p,
 .sourcing-text p {
   margin-bottom: 20px;
-  line-height: 1.6;
+  line-height: 1.8;
+  color: #555;
+  font-size: 1.1rem;
 }
 
 .mission-image,
 .sourcing-image {
-  border-radius: var(--border-radius);
+  border-radius: 15px;
   overflow: hidden;
-  box-shadow: var(--shadow);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.mission-image:hover,
+.sourcing-image:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
 .value-section h2,
@@ -74,11 +95,18 @@
 }
 
 .team-member {
-  background-color: white;
-  border-radius: var(--border-radius);
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: var(--shadow);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.team-member:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
 .member-image {
@@ -87,25 +115,32 @@
 }
 
 .team-member h3 {
-  margin: 20px 0 5px;
-  color: var(--primary-color);
+  margin: 25px 0 5px;
+  color: #2c3e50;
+  font-size: 1.4rem;
+  font-weight: 600;
 }
 
 .member-title {
-  color: var(--accent-color);
+  color: #667eea;
   font-weight: 600;
   margin-bottom: 15px;
+  font-size: 1rem;
 }
 
 .member-bio {
-  padding: 0 20px 20px;
-  line-height: 1.6;
+  padding: 0 20px 25px;
+  line-height: 1.7;
+  color: #666;
+  font-size: 0.95rem;
 }
 
 @media (max-width: 992px) {
   .mission-content,
   .sourcing-content {
     grid-template-columns: 1fr;
+    padding: 30px;
+    gap: 30px;
   }
 
   .sourcing-image {
@@ -121,5 +156,18 @@
   .value-grid,
   .team-grid {
     grid-template-columns: 1fr;
+  }
+
+  .mission-content,
+  .sourcing-content {
+    padding: 20px;
+    gap: 20px;
+  }
+
+  .mission-text h2,
+  .sourcing-text h2,
+  .value-section h2,
+  .team-section h2 {
+    font-size: 1.8rem;
   }
 }

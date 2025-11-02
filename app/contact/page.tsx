@@ -540,18 +540,8 @@ export default function Contact() {
                   <div className="recaptcha-container">
                     <div className="recaptcha-placeholder">
                       {/* Real implementation would use Google reCAPTCHA here */}
-                      <div className="fake-recaptcha">
-                        <div className="recaptcha-checkbox"></div>
-                        <span>I'm not a robot</span>
-                        <div className="recaptcha-logo">
-                          <Image
-                            src="/placeholder.svg?height=40&width=40"
-                            alt="reCAPTCHA"
-                            width={40}
-                            height={40}
-                            loader={cloudinaryLoader}
-                          />
-                        </div>
+                      <div className="recaptcha-placeholder">
+                        <p>reCAPTCHA verification required</p>
                       </div>
                     </div>
                     {errors.recaptcha && <p className="error">{errors.recaptcha}</p>}

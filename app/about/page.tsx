@@ -22,7 +22,12 @@ export default async function About() {
     title: string
     description: string
     price: number
-    woodType: string
+    category: {
+      id: string
+      name: string
+      slug: string
+    }
+    material: string | null
     region: string
     size: string
     images: string[]
@@ -31,7 +36,11 @@ export default async function About() {
     updatedAt: Date
   }> = []
   try {
-    artListings = await prisma.artListing.findMany()
+    artListings = await prisma.artListing.findMany({
+      include: {
+        category: true,
+      },
+    })
   } catch (error) {
     console.error("Error fetching art listings:", error)
   }
@@ -55,16 +64,37 @@ export default async function About() {
           <section className="mission-section">
             <div className="mission-content">
               <div className="mission-text">
-                <h2>Our Mission</h2>
+                <h2>About Arts Afrik</h2>
+                <p className="subtitle">Celebrating African Creativity, One Craft at a Time</p>
                 <p>
-                  Arts Afrik is dedicated to connecting global art enthusiasts with authentic traditional African art
-                  and curios. Our mission is to showcase the rich artistic heritage of Africa while supporting local
-                  artisans and preserving cultural traditions.
+                  At Arts Afrik, we bring the vibrant spirit of Kenya's Maasai Market to the digital world — a space where tradition meets technology, and every product tells a story.
                 </p>
                 <p>
-                  We believe that art is a powerful medium for cultural exchange and understanding. By bringing these
-                  unique pieces to a global audience, we hope to foster appreciation for African artistic traditions and
-                  create sustainable opportunities for talented artisans.
+                  We partner directly with local artisans, creators, and cooperatives across Kenya to showcase authentic handmade crafts and traditional African art, from colorful Maasai beadwork and hand-carved sculptures to woven baskets, textiles, jewelry, paintings, home décor, carvings, masks, and other handcrafted goods that embody the soul of African design.
+                </p>
+                <p>
+                  Our mission is simple: to empower artisans, preserve culture, and share African artistry with the world through a modern, fair, and accessible marketplace.
+                </p>
+                <p>
+                  By shopping on Sanaa, you're not just buying beautiful crafts — you're supporting local communities, sustaining traditional skills, and helping artisans earn a fair income for their work.
+                </p>
+
+                <h3>What We Stand For</h3>
+                <ul>
+                  <li><strong>Authenticity:</strong> Every piece on Arts Afrik is handmade, unique, and rich in cultural meaning.</li>
+                  <li><strong>Empowerment:</strong> We give artisans direct access to global buyers, removing middlemen.</li>
+                  <li><strong>Sustainability:</strong> Our crafts are made with locally sourced, eco-friendly materials.</li>
+                  <li><strong>Connection:</strong> We bridge cultures by sharing the creativity, heritage, and stories behind every creation.</li>
+                </ul>
+
+                <h3>Our Vision</h3>
+                <p>
+                  To become Africa's leading online marketplace for authentic Maasai Market goods and handmade art — connecting global admirers of culture with the talented hands that shape it.
+                </p>
+
+                <h3>Join Us</h3>
+                <p>
+                  Explore. Discover. Celebrate the beauty of African craftsmanship. Together, let's make Arts Afrik a home for creativity and cultural pride.
                 </p>
               </div>
               <div className="mission-image">
@@ -94,21 +124,24 @@ export default async function About() {
                   exemplify the highest standards of craftsmanship and cultural authenticity.
                 </p>
                 <p>
-                  We believe in transparent representation, providing accurate information about each artwork's origin,
+                  We believe in transparent representation, providing accurate information about each Maasai Market good's origin,
                   materials, and cultural context. Our commitment to authenticity means that every piece in our
                   collection is a genuine expression of African artistic tradition.
                 </p>
                 <p>
-                  By choosing Arts Afrik, you're not just acquiring a beautiful art piece – you're supporting
+                  By choosing Arts Afrik, you're not just acquiring a beautiful Maasai Market good or art piece – you're supporting
                   sustainable livelihoods for talented artisans and helping to preserve cultural heritage for future
                   generations.
+                </p>
+                <p>
+                  Our platform includes a comprehensive admin dashboard where administrators can manage art listings, process order requests, create and edit blog posts, and add team members. The admin interface provides full control over content and operations.
                 </p>
               </div>
             </div>
           </section>
 
           <section className="team-section">
-            <h2>Our Team</h2>
+            <h2>Meet Our Team</h2>
             <div className="team-grid">
               {teamMembers.length > 0 ? (
                 teamMembers.map((member) => (
@@ -127,41 +160,9 @@ export default async function About() {
                   </div>
                 ))
               ) : (
-                <>
-                  <div className="team-member">
-                    <div className="member-image" style={{ width: 300, height: 300, position: "relative" }}>
-                      <TeamMemberImage src="/images/musa.JPG" alt="Mutuku Moses" fill style={{ objectFit: "contain" }} />
-                    </div>
-                    <h3>Mutuku Moses</h3>
-                    <p className="member-title">Founder & Curator</p>
-                    <p className="member-bio">
-                      With over 7 years of experience working with African art, Musa founded Arts Afrik to share his
-                      passion for traditional craftsmanship with the world.
-                    </p>
-                  </div>
-                  <div className="team-member">
-                    <div className="member-image" style={{ width: 300, height: 300, position: "relative" }}>
-                      <TeamMemberImage src="/images/7386.jpg" alt="Joshua Mwendwa" fill style={{ objectFit: "contain" }} />
-                    </div>
-                    <h3>Joshua Mwendwa</h3>
-                    <p className="member-title">Artisan Relations</p>
-                    <p className="member-bio">
-                      Joshua works directly with artisan communities, ensuring fair partnerships and helping to bring
-                      their unique creations to a global audience.
-                    </p>
-                  </div>
-                  <div className="team-member">
-                    <div className="member-image" style={{ width: 300, height: 300, position: "relative" }}>
-                      <TeamMemberImage src="/images/lilian.jpg" alt="Lilian Ndanu" fill style={{ objectFit: "contain" }} />
-                    </div>
-                    <h3>Lilian Ndanu</h3>
-                    <p className="member-title">Cultural Specialist</p>
-                    <p className="member-bio">
-                      With a PhD in Arts, Lilian provides expert knowledge on the cultural context and historical
-                      significance of each art piece.
-                    </p>
-                  </div>
-                </>
+                <div className="no-team-members">
+                  <p>Team members will be added by administrators through the admin dashboard.</p>
+                </div>
               )}
             </div>
           </section>

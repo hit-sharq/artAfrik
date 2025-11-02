@@ -16,7 +16,12 @@ import { cloudinaryLoader } from "@/lib/cloudinary"
 interface ArtListing {
   id: string
   title: string
-  woodType: string
+  category: {
+    id: string
+    name: string
+    slug: string
+  }
+  material?: string
   region: string
   price: number
   image?: string
@@ -25,11 +30,11 @@ interface ArtListing {
 
 export default function Gallery() {
   const searchParams = useSearchParams()
-  const initialWoodType = searchParams.get("woodType") || ""
+  const initialCategory = searchParams.get("category") || ""
   const initialRegion = searchParams.get("region") || ""
 
   const [filters, setFilters] = useState({
-    woodType: initialWoodType,
+    category: initialCategory,
     region: initialRegion,
     priceRange: "",
     sortBy: "newest",
@@ -48,7 +53,7 @@ export default function Gallery() {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 6
 
-  const woodTypes = ["All", "Ebony", "Rosewood", "Mahogany"]
+  const [categories, setCategories] = useState<Array<{id: string, name: string, slug: string}>>([])
   const regions = ["All", "West Africa", "East Africa", "Central Africa", "Southern Africa"]
   const priceRanges = ["All", "Under $100", "$100 - $150", "Over $150"]
   const sortOptions = [
@@ -61,10 +66,18 @@ export default function Gallery() {
   ]
 
   useEffect(() => {
-    // Fetch art listings from the database
-    const fetchArtListings = async () => {
+    // Fetch categories and art listings from the database
+    const fetchData = async () => {
       setIsLoading(true)
       try {
+        // Fetch categories
+        const categoriesResponse = await fetch("/api/categories")
+        if (categoriesResponse.ok) {
+          const categoriesData = await categoriesResponse.json()
+          setCategories(categoriesData)
+        }
+
+        // Fetch art listings
         const response = await fetch("/api/art-listings")
         if (!response.ok) {
           throw new Error("Failed to fetch art listings")
@@ -79,7 +92,7 @@ export default function Gallery() {
 
         setArtListings(formattedData)
       } catch (error) {
-        console.error("Error fetching art listings:", error)
+        console.error("Error fetching data:", error)
         // Fallback to empty array
         setArtListings([])
       } finally {
@@ -87,16 +100,16 @@ export default function Gallery() {
       }
     }
 
-    fetchArtListings()
+    fetchData()
   }, [])
 
   useEffect(() => {
     // Apply filters and sorting
     let result = [...artListings]
 
-    // Filter by wood type
-    if (filters.woodType && filters.woodType !== "All") {
-      result = result.filter((art) => art.woodType === filters.woodType)
+    // Filter by category
+    if (filters.category && filters.category !== "All") {
+      result = result.filter((art) => art.category.name === filters.category)
     }
 
     // Filter by region
@@ -163,7 +176,7 @@ export default function Gallery() {
 
   const clearFilters = () => {
     setFilters({
-      woodType: "",
+      category: "",
       region: "",
       priceRange: "",
       sortBy: "newest",
@@ -201,16 +214,14 @@ export default function Gallery() {
             <div className="filters-container">
               <div className="filters">
                 <div className="filter-group">
-                  <label htmlFor="woodType">Wood Type</label>
-                  <select id="woodType" name="woodType" value={filters.woodType} onChange={handleFilterChange}>
-                    <option value="">All Types</option>
-                    {woodTypes
-                      .filter((type) => type !== "All")
-                      .map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
+                  <label htmlFor="category">Category</label>
+                  <select id="category" name="category" value={filters.category} onChange={handleFilterChange}>
+                    <option value="">All Categories</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.name}>
+                        {category.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -306,7 +317,7 @@ export default function Gallery() {
                   <div className="art-info">
                     <h3>{art.title}</h3>
                     <p className="art-details">
-                      {art.woodType} • {art.region}
+                      {art.category.name} • {art.region}
                     </p>
                     <p className="art-price">${art.price.toFixed(2)}</p>
                     <Link href={`/gallery/${art.id}`} className="button view-button">

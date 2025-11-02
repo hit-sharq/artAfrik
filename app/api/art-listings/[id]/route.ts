@@ -7,6 +7,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     const artListing = await prisma.artListing.findUnique({
       where: { id },
+      include: {
+        category: true,
+      },
     })
 
     if (!artListing) {

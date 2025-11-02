@@ -15,7 +15,12 @@ interface ArtListing {
   id: string
   title: string
   description: string
-  woodType: string
+  category: {
+    id: string
+    name: string
+    slug: string
+  }
+  material?: string
   region: string
   size: string
   price: number
@@ -43,14 +48,14 @@ export default function ProductDetail() {
         const artPiece = await response.json()
         setArt(artPiece)
 
-        // Fetch related art based on woodType or region
+        // Fetch related art based on category or region
         const relatedResponse = await fetch("/api/art-listings")
         if (relatedResponse.ok) {
           const allArt = await relatedResponse.json()
           const related = allArt
             .filter(
               (item: ArtListing) =>
-                item.id !== id && (item.woodType === artPiece.woodType || item.region === artPiece.region),
+                item.id !== id && (item.category.id === artPiece.category.id || item.region === artPiece.region),
             )
             .slice(0, 3)
           setRelatedArt(related)
@@ -204,9 +209,15 @@ export default function ProductDetail() {
 
               <div className="product-meta">
                 <div className="meta-item">
-                  <span className="meta-label">Wood Type:</span>
-                  <span className="meta-value">{art.woodType}</span>
+                  <span className="meta-label">Category:</span>
+                  <span className="meta-value">{art.category.name}</span>
                 </div>
+                {art.material && (
+                  <div className="meta-item">
+                    <span className="meta-label">Material:</span>
+                    <span className="meta-value">{art.material}</span>
+                  </div>
+                )}
                 <div className="meta-item">
                   <span className="meta-label">Origin:</span>
                   <span className="meta-value">{art.region}</span>
@@ -281,7 +292,7 @@ export default function ProductDetail() {
                     <div className="art-info">
                       <h3>{item.title}</h3>
                       <p className="art-details">
-                        {item.woodType} • {item.region}
+                        {item.category.name} • {item.region}
                       </p>
                       <p className="art-price">${item.price.toFixed(2)}</p>
                       <Link href={`/gallery/${item.id}`} className="button view-button">

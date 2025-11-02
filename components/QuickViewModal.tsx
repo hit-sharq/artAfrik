@@ -11,7 +11,11 @@ interface ArtListing {
   title: string
   description: string
   price: number
-  woodType: string
+  category: {
+    id: string
+    name: string
+    slug: string
+  }
   region: string
   size: string
   images: string[]
@@ -73,7 +77,7 @@ export default function QuickViewModal({ isOpen, onClose, artId }: QuickViewModa
             <div className="modal-details">
               <h2>{art.title}</h2>
               <p className="art-type">
-                {art.woodType} • {art.region}
+                {art.category.name} • {art.region}
               </p>
               <p className="art-size">Size: {art.size}</p>
               <p className="art-price">${art.price.toFixed(2)}</p>

@@ -23,14 +23,15 @@ export async function createArtListing(formData: FormData) {
   try {
     const title = formData.get("title") as string
     const description = formData.get("description") as string
-    const woodType = formData.get("woodType") as string
+    const categoryId = formData.get("categoryId") as string
+    const material = formData.get("material") as string || ""
     const region = formData.get("region") as string
     const price = Number.parseFloat(formData.get("price") as string)
     const size = formData.get("size") as string
     const featured = formData.get("featured") === "on"
 
     // Validate required fields
-    if (!title || !description || !woodType || !region || isNaN(price) || !size) {
+    if (!title || !description || !categoryId || !region || isNaN(price) || !size) {
       return {
         success: false,
         message: "Please fill in all required fields",
@@ -97,7 +98,8 @@ export async function createArtListing(formData: FormData) {
       data: {
         title,
         description,
-        woodType,
+        categoryId,
+        material,
         region,
         price,
         size,
@@ -142,14 +144,15 @@ export async function updateArtListing(formData: FormData) {
     const id = formData.get("id") as string
     const title = formData.get("title") as string
     const description = formData.get("description") as string
-    const woodType = formData.get("woodType") as string
+    const categoryId = formData.get("categoryId") as string
+    const material = formData.get("material") as string || ""
     const region = formData.get("region") as string
     const price = Number.parseFloat(formData.get("price") as string)
     const size = formData.get("size") as string
     const featured = formData.get("featured") === "on"
 
     // Validate required fields
-    if (!id || !title || !description || !woodType || !region || isNaN(price) || !size) {
+    if (!id || !title || !description || !categoryId || !region || isNaN(price) || !size) {
       return {
         success: false,
         message: "Please fill in all required fields",
@@ -162,7 +165,8 @@ export async function updateArtListing(formData: FormData) {
       data: {
         title,
         description,
-        woodType,
+        categoryId,
+        material,
         region,
         price,
         size,

@@ -1,6 +1,6 @@
-# 🎨 Arts Afrik
+# 🎨 ArtAfrik
 
-**Arts Afrik** is a full-stack web platform that curates and sells authentic African artwork — including paintings, carvings, masks, and sculptures — connecting collectors worldwide with talented African artists.
+**ArtAfrik** is a full-stack web platform that curates and sells authentic Maasai Market goods and handcrafted African art — including beadwork, textiles, jewelry, paintings, home décor, carvings, masks, sculptures, and other traditional crafts — connecting collectors worldwide with talented African artisans.
 
 ## 🌍 Vision
 
@@ -31,7 +31,7 @@ To preserve and promote Africa's cultural legacy by giving global visibility to 
 
 ### Public Pages
 - **Home** – Welcome message, featured art, and call-to-action
-- **About** – Story of Arts Afrik and mission
+- **About** – Story of ArtAfrik and mission
 - **Listings** – All art pieces with search and filters
 - **Contact** – Inquiry form for potential buyers or partners
 
@@ -112,7 +112,7 @@ Submit a PR with your changes
 This project is licensed under the MIT License.
 
 👤 Author
-Joshua Mwendwa – Software Engineer & Founder of Arts Afrik
+Joshua Mwendwa – Software Engineer & Founder of ArtAfrik
 LinkedIn https://www.linkedin.com/in/lee-joshua-b183b5287/ | GitHub https://github.com/hit-sharq
 
 

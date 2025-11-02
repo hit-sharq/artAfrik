@@ -11,7 +11,7 @@ export default function Footer() {
           <div className="footer-section">
             <h3>Arts Afrik</h3>
             <p>
-              Connecting global buyers with authentic traditional African art and curios, sourced directly from skilled
+              Connecting global buyers with authentic Maasai Market goods and handcrafted African art, sourced directly from skilled
               artisans across the continent.
             </p>
             <div className="social-links">
@@ -60,16 +60,22 @@ export default function Footer() {
             <h3>Art Categories</h3>
             <ul className="footer-links">
               <li>
-                <Link href="/gallery?woodType=Ebony">Ebony Wood Art</Link>
+                <Link href="/gallery?category=Beadwork">Maasai Beadwork</Link>
               </li>
               <li>
-                <Link href="/gallery?woodType=Rosewood">Rosewood Sculptures</Link>
+                <Link href="/gallery?category=Textiles">African Textiles</Link>
               </li>
               <li>
-                <Link href="/gallery?woodType=Mahogany">Mahogany Carvings</Link>
+                <Link href="/gallery?category=Jewelry">Traditional Jewelry</Link>
               </li>
               <li>
-                <Link href="/gallery?region=West%20Africa">West African Art</Link>
+                <Link href="/gallery?category=Paintings">African Paintings</Link>
+              </li>
+              <li>
+                <Link href="/gallery?category=Carvings">Wood Carvings</Link>
+              </li>
+              <li>
+                <Link href="/gallery?category=Home%20Décor">Home Décor</Link>
               </li>
             </ul>
           </div>
@@ -77,8 +83,8 @@ export default function Footer() {
           <div className="footer-section">
             <h3>Contact Us</h3>
             <p>Email: artafrik.gallery@gmail.com</p>
-            <p>Phone: +254 794 773 452</p>
-            <p>Hours: Monday - Friday, 8am - 8pm</p>
+            <p>Phone: +254 758 251 399 | +254 794 773 452</p>
+            <p>Hours: Monday - Friday, 9am - 5pm</p>
           </div>
         </div>
 

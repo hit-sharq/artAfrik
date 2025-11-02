@@ -11,7 +11,11 @@ interface ArtListing {
   title: string
   description: string
   price: number
-  woodType: string
+  category: {
+    id: string
+    name: string
+    slug: string
+  }
   region: string
   size: string
   featured: boolean
@@ -29,21 +33,25 @@ export default function EditArtModal({ isOpen, onClose, artId, onSuccess }: Edit
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState("")
+  const [categories, setCategories] = useState<Array<{id: string, name: string, slug: string}>>([])
 
   useEffect(() => {
     if (isOpen && artId) {
       setIsLoading(true)
       setError("")
 
-      // Fetch the art details
-      fetch(`/api/art-listings/${artId}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setArt(data)
+      // Fetch categories and art details
+      Promise.all([
+        fetch("/api/categories").then(res => res.json()),
+        fetch(`/api/art-listings/${artId}`).then(res => res.json())
+      ])
+        .then(([categoriesData, artData]) => {
+          setCategories(categoriesData)
+          setArt(artData)
           setIsLoading(false)
         })
         .catch((error) => {
-          console.error("Error fetching art details:", error)
+          console.error("Error fetching data:", error)
           setError("Failed to load art details. Please try again.")
           setIsLoading(false)
         })
@@ -78,7 +86,7 @@ export default function EditArtModal({ isOpen, onClose, artId, onSuccess }: Edit
       formData.append("id", art.id)
       formData.append("title", art.title)
       formData.append("description", art.description)
-      formData.append("woodType", art.woodType)
+      formData.append("categoryId", art.category.id)
       formData.append("region", art.region)
       formData.append("price", art.price.toString())
       formData.append("size", art.size)
@@ -148,13 +156,14 @@ export default function EditArtModal({ isOpen, onClose, artId, onSuccess }: Edit
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="woodType">Wood Type</label>
-                <select id="woodType" name="woodType" value={art.woodType} onChange={handleChange} required>
-                  <option value="">Select Wood Type</option>
-                  <option value="Ebony">Ebony</option>
-                  <option value="Rosewood">Rosewood</option>
-                  <option value="Mahogany">Mahogany</option>
-                  <option value="Other">Other</option>
+                <label htmlFor="categoryId">Category</label>
+                <select id="categoryId" name="categoryId" value={art.category.id} onChange={handleChange} required>
+                  <option value="">Select Category</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
