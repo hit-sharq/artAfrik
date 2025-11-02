@@ -17,12 +17,29 @@ function selectImageByDay(images: GalleryImage[]) {
 
 export default async function About() {
   const { teamMembers = [] } = await getTeamMembers()
-  const artListings = await prisma.artListing.findMany()
+  let artListings: Array<{
+    id: string
+    title: string
+    description: string
+    price: number
+    woodType: string
+    region: string
+    size: string
+    images: string[]
+    featured: boolean
+    createdAt: Date
+    updatedAt: Date
+  }> = []
+  try {
+    artListings = await prisma.artListing.findMany()
+  } catch (error) {
+    console.error("Error fetching art listings:", error)
+  }
   // Flatten all images from all art listings into a single array
   const allImages: GalleryImage[] = []
   artListings.forEach((listing) => {
     if (listing.images && listing.images.length > 0) {
-      listing.images.forEach((img) => {
+      listing.images.forEach((img: string) => {
         allImages.push({ image: img, title: listing.title })
       })
     }

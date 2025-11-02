@@ -5,7 +5,7 @@ import "./globals.css"
 import { ThemeProvider } from "../components/theme-provider"
 
 export const metadata: Metadata = {
-  title: "Arts Afrik - Traditional African Art",
+  title: "Sanaa - Traditional African Art",
   description: "Connect with authentic traditional African art and curios from across the continent.",
 }
 
