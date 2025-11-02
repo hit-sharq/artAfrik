@@ -48,7 +48,8 @@ const Header = () => {
         <div className="header-content">
           <div className="logo">
             <Link href="/">
-              <h1>Arts Afrik</h1>
+              <h1>Sanaa</h1>
+              <h2 style={{ fontStyle: 'italic', fontSize: '0.9em', margin: '5px 0 0 0', color: 'black' }}>Arts Afrik</h2>
             </Link>
           </div>
 
