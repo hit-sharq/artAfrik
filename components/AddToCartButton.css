@@ -1,0 +1,146 @@
+/* Add to Cart Button Styles */
+.addtocart-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.addtocart-wrapper.large {
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.quantity-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.quantity-selector button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #374151;
+  transition: all 0.2s;
+}
+
+.quantity-selector button:hover:not(:disabled) {
+  background: #c9a227;
+  color: white;
+}
+
+.quantity-selector button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quantity-selector span {
+  min-width: 32px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.addtocart-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: #c9a227;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.addtocart-btn:hover:not(:disabled) {
+  background: #b8922a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(201, 162, 39, 0.3);
+}
+
+.addtocart-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.addtocart-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.addtocart-btn.large {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  font-size: 1.0625rem;
+}
+
+.addtocart-btn.icon-only {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+/* Loading spinner animation */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Toast success animation */
+.toast-success {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .addtocart-btn {
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  .addtocart-wrapper {
+    flex-direction: column;
+  }
+  
+  .addtocart-wrapper.large {
+    flex-direction: row;
+  }
+  
+  .quantity-selector {
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .addtocart-btn.large {
+    flex: 1;
+  }
+}
+

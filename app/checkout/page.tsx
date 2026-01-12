@@ -1,0 +1,605 @@
+// Checkout Page with Stripe + M-Pesa Support
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import Link from 'next/link';
+import { ArrowLeft, CreditCard, Lock, Check, Loader2, Smartphone, Building } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import toast from 'react-hot-toast';
+import './checkout.css';
+
+// Only load Stripe if publishable key is available
+const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
+
+// Payment method types
+type PaymentMethod = 'stripe' | 'mpesa' | 'pesapal';
+
+interface ShippingInfo {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  country: string;
+}
+
+// Stripe Checkout Form
+function StripeCheckoutForm({ clientSecret, orderId }: { clientSecret: string; orderId: string }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+
+    setIsProcessing(true);
+    setPaymentError(null);
+
+    try {
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/checkout/success?orderId=${orderId}`,
+        },
+        redirect: 'if_required',
+      });
+
+      if (error) {
+        setPaymentError(error.message || 'Payment failed');
+        toast.error(error.message || 'Payment failed');
+      } else if (paymentIntent?.status === 'succeeded') {
+        toast.success('Payment successful! Redirecting...');
+        window.location.href = `/checkout/success?orderId=${orderId}`;
+      }
+    } catch (err) {
+      setPaymentError('An unexpected error occurred');
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="checkout-form">
+      <PaymentElement />
+      {paymentError && <div className="payment-error">{paymentError}</div>}
+      <button type="submit" className="pay-btn stripe-pay-btn" disabled={!stripe || isProcessing}>
+        {isProcessing ? <><Loader2 size={20} className="spin" />Processing...</> : <><Lock size={20} />Pay with Card</>}
+      </button>
+    </form>
+  );
+}
+
+// M-Pesa Checkout Form
+function MpesaCheckoutForm({ orderId, onSuccess }: { orderId: string; onSuccess: () => void }) {
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'sending' | 'pending' | 'success' | 'error'>('idle');
+
+  const handleMpesaPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phoneNumber) {
+      toast.error('Please enter your phone number');
+      return;
+    }
+
+    setIsProcessing(true);
+    setStatus('sending');
+
+    try {
+      const response = await fetch('/api/payments/mpesa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cartId: 'local',
+          shippingInfo: { phone: phoneNumber },
+          phoneNumber,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (data.data.isDevelopment) {
+          // Development mode - simulate
+          setStatus('success');
+          toast.success('M-Pesa payment simulated!');
+          setTimeout(onSuccess, 1500);
+        } else {
+          setStatus('pending');
+          toast.success('STK push sent! Check your phone.');
+          // Poll for status
+          pollPaymentStatus(data.data.orderId);
+        }
+      } else {
+        setStatus('error');
+        toast.error(data.error || 'Payment failed');
+      }
+    } catch (error) {
+      setStatus('error');
+      toast.error('Failed to initiate payment');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const pollPaymentStatus = async (orderId: string) => {
+    const maxAttempts = 30;
+    let attempts = 0;
+
+    const poll = async () => {
+      attempts++;
+      try {
+        const response = await fetch(`/api/payments/mpesa?orderId=${orderId}`);
+        const data = await response.json();
+
+        if (data.data.paymentStatus === 'COMPLETED') {
+          setStatus('success');
+          toast.success('Payment received!');
+          onSuccess();
+        } else if (attempts < maxAttempts) {
+          setTimeout(poll, 2000);
+        } else {
+          setStatus('error');
+          toast.error('Payment verification timed out');
+        }
+      } catch (error) {
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 2000);
+        }
+      }
+    };
+
+    setTimeout(poll, 2000);
+  };
+
+  return (
+    <div className="mpesa-checkout-form">
+      <div className="mpesa-info">
+        <Smartphone size={24} />
+        <div>
+          <h4>M-Pesa Payment</h4>
+          <p>You will receive an STK push on your phone to complete the payment.</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleMpesaPayment}>
+        <div className="form-group">
+          <label htmlFor="mpesaPhone">Phone Number (M-Pesa)</label>
+          <input
+            type="tel"
+            id="mpesaPhone"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            placeholder="254712345678"
+            required
+          />
+          <span className="input-hint">Enter your M-Pesa registered number (e.g., 254712345678)</span>
+        </div>
+
+        {status === 'sending' && (
+          <div className="payment-status sending">
+            <Loader2 size={20} className="spin" />
+            <span>Sending STK push...</span>
+          </div>
+        )}
+
+        {status === 'pending' && (
+          <div className="payment-status pending">
+            <Smartphone size={20} className="spin" />
+            <span>Waiting for payment... Check your phone and enter your M-Pesa PIN.</span>
+          </div>
+        )}
+
+        {status === 'success' && (
+          <div className="payment-status success">
+            <Check size={20} />
+            <span>Payment received! Redirecting...</span>
+          </div>
+        )}
+
+        {status === 'error' && (
+          <div className="payment-status error">
+            <span>Payment failed. Please try again.</span>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          className="pay-btn mpesa-pay-btn"
+          disabled={isProcessing || status === 'pending'}
+        >
+          {isProcessing ? (
+            <><Loader2 size={20} className="spin" />Processing...</>
+          ) : status === 'pending' ? (
+            <><Loader2 size={20} className="spin" />Waiting...</>
+          ) : (
+            <><Smartphone size={20} />Send STK Push</>
+          )}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+// PesaPal Checkout Form
+function PesaPalCheckoutForm({ orderId, onSuccess }: { orderId: string; onSuccess: () => void }) {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState<'mpesa' | 'card' | 'bank'>('mpesa');
+  const [phoneNumber, setPhoneNumber] = useState('');
+
+  const handlePesaPalPayment = async () => {
+    setIsProcessing(true);
+
+    try {
+      const response = await fetch('/api/payments/pesapal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cartId: 'local',
+          shippingInfo: { phone: phoneNumber },
+          paymentMethod: selectedMethod,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (data.data.isDevelopment) {
+          toast.success('PesaPal payment simulated!');
+          setTimeout(onSuccess, 1500);
+        } else if (data.data.redirectUrl) {
+          // Redirect to PesaPal
+          window.location.href = data.data.redirectUrl;
+        } else {
+          toast.success('Payment initiated!');
+          setTimeout(onSuccess, 1500);
+        }
+      } else {
+        toast.error(data.error || 'Payment failed');
+      }
+    } catch (error) {
+      toast.error('Failed to initiate payment');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="pesapal-checkout-form">
+      <div className="pesapal-info">
+        <Building size={24} />
+        <div>
+          <h4>PesaPal Payment</h4>
+          <p>Pay securely via PesaPal with M-Pesa, credit card, or bank transfer.</p>
+        </div>
+      </div>
+
+      {selectedMethod === 'mpesa' && (
+        <div className="form-group">
+          <label htmlFor="pesapalPhone">Phone Number (M-Pesa)</label>
+          <input
+            type="tel"
+            id="pesapalPhone"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            placeholder="254712345678"
+          />
+        </div>
+      )}
+
+      <div className="pesapal-methods">
+        <button
+          type="button"
+          className={`method-btn ${selectedMethod === 'mpesa' ? 'active' : ''}`}
+          onClick={() => setSelectedMethod('mpesa')}
+        >
+          <Smartphone size={18} />
+          <span>M-Pesa</span>
+        </button>
+        <button
+          type="button"
+          className={`method-btn ${selectedMethod === 'card' ? 'active' : ''}`}
+          onClick={() => setSelectedMethod('card')}
+        >
+          <CreditCard size={18} />
+          <span>Card</span>
+        </button>
+        <button
+          type="button"
+          className={`method-btn ${selectedMethod === 'bank' ? 'active' : ''}`}
+          onClick={() => setSelectedMethod('bank')}
+        >
+          <Building size={18} />
+          <span>Bank</span>
+        </button>
+      </div>
+
+      <button
+        type="button"
+        className="pay-btn pesapal-pay-btn"
+        onClick={handlePesaPalPayment}
+        disabled={isProcessing}
+      >
+        {isProcessing ? (
+          <><Loader2 size={20} className="spin" />Processing...</>
+        ) : (
+          <><Lock size={20} />Continue to PesaPal</>
+        )}
+      </button>
+    </div>
+  );
+}
+
+// Payment Method Selector Component
+function PaymentMethodSelector({ 
+  selected, 
+  onSelect 
+}: { 
+  selected: PaymentMethod; 
+  onSelect: (method: PaymentMethod) => void;
+}) {
+  return (
+    <div className="payment-method-selector">
+      <h3>Select Payment Method</h3>
+      <div className="method-options">
+        <button
+          type="button"
+          className={`method-option ${selected === 'stripe' ? 'selected' : ''}`}
+          onClick={() => onSelect('stripe')}
+        >
+          <CreditCard size={24} />
+          <div className="method-details">
+            <span className="method-name">Credit / Debit Card</span>
+            <span className="method-provider">Via Stripe</span>
+          </div>
+          {selected === 'stripe' && <Check size={20} className="check-icon" />}
+        </button>
+
+        <button
+          type="button"
+          className={`method-option ${selected === 'mpesa' ? 'selected' : ''}`}
+          onClick={() => onSelect('mpesa')}
+        >
+          <Smartphone size={24} />
+          <div className="method-details">
+            <span className="method-name">M-Pesa</span>
+            <span className="method-provider">Direct Payment</span>
+          </div>
+          {selected === 'mpesa' && <Check size={20} className="check-icon" />}
+        </button>
+
+        <button
+          type="button"
+          className={`method-option ${selected === 'pesapal' ? 'selected' : ''}`}
+          onClick={() => onSelect('pesapal')}
+        >
+          <Building size={24} />
+          <div className="method-details">
+            <span className="method-name">PesaPal</span>
+            <span className="method-provider">M-Pesa, Card, Bank</span>
+          </div>
+          {selected === 'pesapal' && <Check size={20} className="check-icon" />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function CheckoutPage() {
+  const router = useRouter();
+  const { items, subtotal, clearCart } = useCart();
+  const [isLoading, setIsLoading] = useState(true);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('stripe');
+  const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    country: '',
+  });
+
+  const shippingCost = subtotal > 500 ? 0 : 25;
+  const tax = subtotal * 0.08;
+  const total = subtotal + shippingCost + tax;
+
+  const handleSuccess = () => {
+    clearCart();
+    window.location.href = `/checkout/success?orderId=${orderId}`;
+  };
+
+  const initializePayment = async () => {
+    try {
+      const endpoint = paymentMethod === 'mpesa' ? '/api/payments/mpesa' 
+        : paymentMethod === 'pesapal' ? '/api/payments/pesapal' 
+        : '/api/payments';
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cartId: 'local',
+          shippingInfo,
+          phoneNumber: shippingInfo.phone,
+          paymentMethod,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (paymentMethod === 'stripe' && data.data.clientSecret) {
+          setClientSecret(data.data.clientSecret);
+        }
+        setOrderId(data.data.orderId);
+      } else {
+        toast.error(data.error || 'Failed to initialize checkout');
+      }
+    } catch (error) {
+      console.error('Error initializing payment:', error);
+      toast.error('Failed to initialize checkout');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (items.length === 0) {
+      router.push('/cart');
+      return;
+    }
+    initializePayment();
+  }, [items, router, paymentMethod]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setShippingInfo((prev) => ({ ...prev, [name]: value }));
+  };
+
+  if (items.length === 0) {
+    return (
+      <div className="checkout-page">
+        <div className="loading-container">
+          <Loader2 size={40} className="spin" />
+          <p>Redirecting to cart...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="checkout-page">
+        <div className="loading-container">
+          <Loader2 size={40} className="spin" />
+          <p>Preparing checkout...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="checkout-page">
+      <div className="checkout-header">
+        <Link href="/cart" className="back-link">
+          <ArrowLeft size={20} />
+          Back to Cart
+        </Link>
+        <h1>Checkout</h1>
+      </div>
+
+      <div className="checkout-layout">
+        <div className="checkout-form-section">
+          {/* Shipping Information */}
+          <div className="form-section">
+            <h2>Shipping Information</h2>
+            <div className="form-grid">
+              <div className="form-group full-width">
+                <label htmlFor="name">Full Name</label>
+                <input type="text" id="name" name="name" value={shippingInfo.name} onChange={handleInputChange} placeholder="John Doe" required />
+              </div>
+              <div className="form-group">
+                <label htmlFor="email">Email</label>
+                <input type="email" id="email" name="email" value={shippingInfo.email} onChange={handleInputChange} placeholder="john@example.com" required />
+              </div>
+              <div className="form-group">
+                <label htmlFor="phone">Phone</label>
+                <input type="tel" id="phone" name="phone" value={shippingInfo.phone} onChange={handleInputChange} placeholder="+1 234 567 8900" required />
+              </div>
+              <div className="form-group full-width">
+                <label htmlFor="address">Address</label>
+                <input type="text" id="address" name="address" value={shippingInfo.address} onChange={handleInputChange} placeholder="123 Main St" required />
+              </div>
+              <div className="form-group">
+                <label htmlFor="city">City</label>
+                <input type="text" id="city" name="city" value={shippingInfo.city} onChange={handleInputChange} placeholder="New York" required />
+              </div>
+              <div className="form-group">
+                <label htmlFor="country">Country</label>
+                <input type="text" id="country" name="country" value={shippingInfo.country} onChange={handleInputChange} placeholder="United States" required />
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Method Selection */}
+          <div className="form-section">
+            <h2><CreditCard size={22} />Payment Method</h2>
+            <PaymentMethodSelector selected={paymentMethod} onSelect={setPaymentMethod} />
+          </div>
+
+          {/* Payment Form based on selection */}
+          <div className="form-section payment-form-section">
+            {paymentMethod === 'stripe' && clientSecret && stripePromise ? (
+              <Elements stripe={stripePromise} options={{ clientSecret }}>
+                <StripeCheckoutForm clientSecret={clientSecret} orderId={orderId || ''} />
+              </Elements>
+            ) : paymentMethod === 'stripe' ? (
+              <div className="dev-checkout-form">
+                <div className="dev-mode-notice">
+                  <div className="dev-badge">🔧 Development Mode</div>
+                  <p>Stripe not configured. Switch to M-Pesa or PesaPal for testing.</p>
+                </div>
+                <button className="pay-btn dev-pay-btn" onClick={handleSuccess}>Simulate Card Payment</button>
+              </div>
+            ) : paymentMethod === 'mpesa' ? (
+              <MpesaCheckoutForm orderId={orderId || ''} onSuccess={handleSuccess} />
+            ) : (
+              <PesaPalCheckoutForm orderId={orderId || ''} onSuccess={handleSuccess} />
+            )}
+          </div>
+        </div>
+
+        {/* Order Summary */}
+        <div className="order-summary-section">
+          <div className="summary-card">
+            <h2>Order Summary</h2>
+            <div className="summary-items">
+              {items.map((item) => {
+                const artwork = item.artListing;
+                if (!artwork) return null;
+                const imageUrl = artwork.images?.[0] || '/placeholder.jpg';
+                return (
+                  <div key={item.id} className="summary-item">
+                    <div className="item-image">
+                      <Image src={imageUrl} alt={artwork.title} width={60} height={60} />
+                      <span className="item-quantity">{item.quantity}</span>
+                    </div>
+                    <div className="item-info">
+                      <p className="item-title">{artwork.title}</p>
+                      <p className="item-price">${(artwork.price || 0).toFixed(2)}</p>
+                    </div>
+                    <p className="item-subtotal">${((artwork.price || 0) * item.quantity).toFixed(2)}</p>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="summary-totals">
+              <div className="summary-row"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
+              <div className="summary-row">
+                <span>Shipping</span>
+                <span>{shippingCost === 0 ? <span className="free">FREE</span> : `$${shippingCost.toFixed(2)}`}</span>
+              </div>
+              <div className="summary-row"><span>Tax</span><span>${tax.toFixed(2)}</span></div>
+              <div className="summary-divider"></div>
+              <div className="summary-row total"><span>Total</span><span>${total.toFixed(2)}</span></div>
+            </div>
+            <div className="secure-badge">
+              <Lock size={16} />Secure Checkout
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
