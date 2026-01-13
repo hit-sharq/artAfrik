@@ -1,9 +1,9 @@
-// Cart Page
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { ShoppingCart, ArrowLeft, Trash2, Plus, Minus } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import Image from 'next/image';
+import MainLayout from '../../components/MainLayout';
 import './cart-page.css';
 
 function CartContent() {
@@ -182,9 +182,11 @@ function CartContent() {
 
 export default function CartPage() {
   return (
-    <Suspense fallback={<div className="loading">Loading cart...</div>}>
-      <CartContent />
-    </Suspense>
+    <MainLayout>
+      <Suspense fallback={<div className="loading">Loading cart...</div>}>
+        <CartContent />
+      </Suspense>
+    </MainLayout>
   );
 }
 

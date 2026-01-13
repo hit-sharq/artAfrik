@@ -34,59 +34,79 @@ interface Artisan {
   status: string
 }
 
+interface Category {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  image: string | null
+  order: number
+}
+
 export default function Home() {
-  const [categoryArtworks, setCategoryArtworks] = useState<Artwork[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [featuredArtworks, setFeaturedArtworks] = useState<Artwork[]>([])
   const [featuredArtisans, setFeaturedArtisans] = useState<Artisan[]>([])
   const [isLoading, setIsLoading] = useState(true)
-
-  // Function to select artworks to display based on current date, rotating every 24 hours
-  function selectArtworksToDisplay(artworks: Artwork[], count: number, excludeIds: string[] = []): Artwork[] {
-    if (artworks.length === 0) return []
-
-    // Filter out artworks with ids in excludeIds
-    const filteredArtworks = artworks.filter(art => !excludeIds.includes(art.id))
-    if (filteredArtworks.length === 0) return []
-
-    const day = new Date().getDate() // day of month 1-31
-    const startIndex = day % filteredArtworks.length
-    const selected: Artwork[] = []
-
-    for (let i = 0; i < count; i++) {
-      selected.push(filteredArtworks[(startIndex + i) % filteredArtworks.length])
-    }
-    return selected
-  }
 
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true)
       try {
-        // Fetch all artworks from gallery with a high limit to get all
-        const artRes = await fetch("/api/art-listings?limit=100")
-        if (!artRes.ok) throw new Error("Failed to fetch gallery artworks")
-        const artData: Artwork[] = await artRes.json()
+        // Fetch categories
+        const categoriesRes = await fetch("/api/categories")
+        if (!categoriesRes.ok) {
+          throw new Error("Failed to fetch categories")
+        }
+        const categoriesData = await categoriesRes.json()
+        console.log("Fetched categories:", categoriesData.length, categoriesData)
+        setCategories(categoriesData)
 
-        // Fetch featured artisans
-        const artisansRes = await fetch("/api/artisans?status=APPROVED")
-        let artisansData: Artisan[] = []
-        if (artisansRes.ok) {
-          artisansData = await artisansRes.json()
+        // Try to fetch featured artworks first
+        let featuredData: Artwork[] = []
+        try {
+          const featuredRes = await fetch("/api/featured-artworks")
+          if (featuredRes.ok) {
+            featuredData = await featuredRes.json()
+            console.log("Fetched featured artworks:", featuredData.length)
+          }
+        } catch (featError) {
+          console.log("Could not fetch featured artworks, trying general listings:", featError)
         }
 
-        // Select up to 2 artworks for categories section
-        const selectedCategoryArtworks = selectArtworksToDisplay(artData, Math.min(2, artData.length))
-        // Select up to 2 artworks for featured section excluding those selected for categories
-        const selectedFeaturedArtworks = selectArtworksToDisplay(artData, Math.min(2, artData.length - selectedCategoryArtworks.length), selectedCategoryArtworks.map(a => a.id))
-        // Select up to 4 featured artisans
-        const selectedArtisans = artisansData.slice(0, 4)
+        // If no featured artworks, fetch from general listings as fallback
+        if (!featuredData || featuredData.length === 0) {
+          console.log("No featured artworks, fetching from general listings...")
+          try {
+            const listingsRes = await fetch("/api/art-listings?limit=8")
+            if (listingsRes.ok) {
+              const listingsData = await listingsRes.json()
+              console.log("Fetched artworks from listings:", listingsData.length, listingsData)
+              featuredData = listingsData
+            }
+          } catch (listError) {
+            console.log("Could not fetch listings either:", listError)
+          }
+        }
 
-        setCategoryArtworks(selectedCategoryArtworks)
-        setFeaturedArtworks(selectedFeaturedArtworks)
-        setFeaturedArtisans(selectedArtisans)
+        setFeaturedArtworks(featuredData || [])
+
+        // Fetch featured artisans (approved only)
+        try {
+          const artisansRes = await fetch("/api/artisans?status=APPROVED")
+          if (artisansRes.ok) {
+            const artisansData = await artisansRes.json()
+            console.log("Fetched artisans:", artisansData.length)
+            // Select up to 4 featured artisans
+            const selectedArtisans = artisansData.slice(0, 4)
+            setFeaturedArtisans(selectedArtisans)
+          }
+        } catch (artisanError) {
+          console.log("Could not fetch artisans:", artisanError)
+        }
       } catch (error) {
         console.error("Failed to fetch data:", error)
-        setCategoryArtworks([])
+        setCategories([])
         setFeaturedArtworks([])
         setFeaturedArtisans([])
       } finally {
@@ -96,6 +116,24 @@ export default function Home() {
 
     fetchData()
   }, [])
+
+  // Get category icon/symbol based on category name
+  const getCategoryIcon = (name: string) => {
+    const icons: Record<string, string> = {
+      paintings: "🎨",
+      sculptures: "🗿",
+      textiles: "🧵",
+      jewelry: "💍",
+      pottery: "🏺",
+      woodcarving: "🪵",
+      basketry: "🧺",
+      masks: "👺",
+      leatherwork: "👜",
+      metalwork: "⚙️",
+    }
+    const key = name.toLowerCase()
+    return icons[key] || "🎁"
+  }
 
   return (
     <MainLayout>
@@ -189,6 +227,7 @@ export default function Home() {
         </section>
       )}
 
+      {/* Categories Section */}
       <section className="categories section">
         <div className="container">
           <h2 className="section-title">Explore Our Categories</h2>
@@ -198,7 +237,7 @@ export default function Home() {
 
           <div className="categories-grid">
             {isLoading ? (
-              Array(2)
+              Array(6)
                 .fill(0)
                 .map((_, i) => (
                   <div className="category-card skeleton" key={i}>
@@ -207,45 +246,52 @@ export default function Home() {
                     <div className="skeleton-text short"></div>
                   </div>
                 ))
-            ) : categoryArtworks.length === 0 ? (
-              <p>No artworks available</p>
+            ) : categories.length === 0 ? (
+              <p>No categories available</p>
             ) : (
-              categoryArtworks.map((art) => (
-                <div className="category-card" key={art.id}>
+              categories.map((category) => (
+                <Link 
+                  href={`/gallery?category=${category.slug}`} 
+                  key={category.id} 
+                  className="category-card"
+                >
                   <div className="category-image">
-                    <Image
-                      src={art.images[0] || "/placeholder.svg"}
-                      alt={art.title}
-                      fill
-                      style={{ objectFit: "cover" }}
-                      priority={true}
-                      loader={cloudinaryLoader}
-                    />
+                    {category.image ? (
+                      <Image
+                        src={category.image}
+                        alt={category.name}
+                        fill
+                        style={{ objectFit: "cover" }}
+                        loader={cloudinaryLoader}
+                      />
+                    ) : (
+                      <div className="category-icon-placeholder">
+                        <span className="category-icon">{getCategoryIcon(category.name)}</span>
+                      </div>
+                    )}
                   </div>
-                  <h3>{art.title}</h3>
-                  <p>{art.description}</p>
-                  <p className="art-origin">{art.region}</p>
-                  <p className="art-price">${art.price.toFixed(2)}</p>
-                  <Link href={`/gallery/${art.id}`} className="button view-button">
-                    View Details
-                  </Link>
-                </div>
+                  <h3>{category.name}</h3>
+                  {category.description && (
+                    <p>{category.description}</p>
+                  )}
+                </Link>
               ))
             )}
           </div>
         </div>
       </section>
 
+      {/* Featured Artworks Section */}
       <section className="featured section">
         <div className="container">
-          <h2 className="section-title">Featured Artworks by Category</h2>
+          <h2 className="section-title">Featured Artworks</h2>
           <p className="section-subtitle">
-            Unique Maasai Market goods and artworks from each category, showcasing the rich diversity of African craftsmanship including beadwork, textiles, jewelry, paintings, home décor, carvings, masks, sculptures, and other handcrafted art.
+            Unique handpicked Maasai Market goods and artworks, showcasing the rich diversity of African craftsmanship including beadwork, textiles, jewelry, paintings, home décor, carvings, masks, sculptures, and other handcrafted art.
           </p>
 
           <div className="featured-grid">
             {isLoading ? (
-              Array(2)
+              Array(4)
                 .fill(0)
                 .map((_, i) => (
                   <div className="art-card skeleton" key={i}>
@@ -259,30 +305,43 @@ export default function Home() {
                   </div>
                 ))
             ) : featuredArtworks.length === 0 ? (
-              <p>No artworks available</p>
+              <p className="empty-message">No featured artworks at the moment. Check back soon!</p>
             ) : (
               featuredArtworks.map((art) => (
-                <div className="category-card" key={art.id}>
-                  <div className="category-image">
-                    <Image
-                      src={art.images[0] || "/placeholder.svg"}
-                      alt={art.title}
-                      fill
-                      style={{ objectFit: "cover" }}
-                      priority={true}
-                      loader={cloudinaryLoader}
-                    />
-                  </div>
-                  <h3>{art.title}</h3>
-                  <p>{art.description}</p>
-                  <p className="art-origin">{art.region}</p>
-                  <p className="art-price">${art.price.toFixed(2)}</p>
-                  <Link href={`/gallery/${art.id}`} className="button view-button">
-                    View Details
+                <div className="art-card" key={art.id}>
+                  <Link href={`/gallery/${art.id}`}>
+                    <div className="art-image">
+                      <Image
+                        src={art.images?.[0] || "/placeholder.svg"}
+                        alt={art.title}
+                        fill
+                        style={{ objectFit: "cover" }}
+                        loader={cloudinaryLoader}
+                      />
+                      {art.category && (
+                        <span className="art-category-badge">{art.category.name}</span>
+                      )}
+                    </div>
                   </Link>
+                  <div className="art-info">
+                    <Link href={`/gallery/${art.id}`}>
+                      <h3>{art.title}</h3>
+                    </Link>
+                    <p className="art-origin">{art.region}</p>
+                    <p className="art-price">${art.price?.toFixed(2) || "0.00"}</p>
+                    <Link href={`/gallery/${art.id}`} className="button view-button">
+                      View Details
+                    </Link>
+                  </div>
                 </div>
               ))
             )}
+          </div>
+
+          <div className="view-all">
+            <Link href="/gallery" className="button secondary-button">
+              View All Artworks →
+            </Link>
           </div>
         </div>
       </section>
@@ -298,9 +357,7 @@ export default function Home() {
               <p>
                 Each piece tells a story of cultural significance, artistic skill, and the natural beauty of African materials. Our mission is to empower artisans, preserve culture, and share African artistry with the world.
               </p>
-              <p>
-                Our platform includes a comprehensive admin dashboard where administrators can manage art listings, process order requests, create and edit blog posts, and add team members. The admin interface provides full control over content and operations.
-              </p>
+
               <Link href="/about" className="button primary-button">
                 Learn More About Us
               </Link>

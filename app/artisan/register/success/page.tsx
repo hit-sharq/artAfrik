@@ -1,8 +1,12 @@
-ter name="content">
 import Link from "next/link"
 import Image from "next/image"
 import { cloudinaryLoader } from "@/lib/cloudinary"
 import "./success.css"
+
+export const metadata = {
+  title: "Registration Submitted - ArtAfrik",
+  description: "Thank you for your artisan registration application",
+}
 
 export default function ArtisanRegisterSuccessPage() {
   return (
@@ -54,6 +58,8 @@ export default function ArtisanRegisterSuccessPage() {
         <div className="success-footer">
           <p>Need help? <a href="/contact">Contact our support team</a></p>
         </div>
+      </div>
     </div>
   )
 }
+

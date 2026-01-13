@@ -10,6 +10,7 @@ import { useCart } from '@/contexts/CartContext';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import toast from 'react-hot-toast';
+import MainLayout from '../../components/MainLayout';
 import './checkout.css';
 
 // Only load Stripe if publishable key is available
@@ -468,138 +469,144 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <div className="checkout-page">
-        <div className="loading-container">
-          <Loader2 size={40} className="spin" />
-          <p>Redirecting to cart...</p>
+      <MainLayout>
+        <div className="checkout-page">
+          <div className="loading-container">
+            <Loader2 size={40} className="spin" />
+            <p>Redirecting to cart...</p>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="checkout-page">
-        <div className="loading-container">
-          <Loader2 size={40} className="spin" />
-          <p>Preparing checkout...</p>
+      <MainLayout>
+        <div className="checkout-page">
+          <div className="loading-container">
+            <Loader2 size={40} className="spin" />
+            <p>Preparing checkout...</p>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="checkout-page">
-      <div className="checkout-header">
-        <Link href="/cart" className="back-link">
-          <ArrowLeft size={20} />
-          Back to Cart
-        </Link>
-        <h1>Checkout</h1>
-      </div>
+    <MainLayout>
+      <div className="checkout-page">
+        <div className="checkout-header">
+          <Link href="/cart" className="back-link">
+            <ArrowLeft size={20} />
+            Back to Cart
+          </Link>
+          <h1>Checkout</h1>
+        </div>
 
-      <div className="checkout-layout">
-        <div className="checkout-form-section">
-          {/* Shipping Information */}
-          <div className="form-section">
-            <h2>Shipping Information</h2>
-            <div className="form-grid">
-              <div className="form-group full-width">
-                <label htmlFor="name">Full Name</label>
-                <input type="text" id="name" name="name" value={shippingInfo.name} onChange={handleInputChange} placeholder="John Doe" required />
-              </div>
-              <div className="form-group">
-                <label htmlFor="email">Email</label>
-                <input type="email" id="email" name="email" value={shippingInfo.email} onChange={handleInputChange} placeholder="john@example.com" required />
-              </div>
-              <div className="form-group">
-                <label htmlFor="phone">Phone</label>
-                <input type="tel" id="phone" name="phone" value={shippingInfo.phone} onChange={handleInputChange} placeholder="+1 234 567 8900" required />
-              </div>
-              <div className="form-group full-width">
-                <label htmlFor="address">Address</label>
-                <input type="text" id="address" name="address" value={shippingInfo.address} onChange={handleInputChange} placeholder="123 Main St" required />
-              </div>
-              <div className="form-group">
-                <label htmlFor="city">City</label>
-                <input type="text" id="city" name="city" value={shippingInfo.city} onChange={handleInputChange} placeholder="New York" required />
-              </div>
-              <div className="form-group">
-                <label htmlFor="country">Country</label>
-                <input type="text" id="country" name="country" value={shippingInfo.country} onChange={handleInputChange} placeholder="United States" required />
-              </div>
-            </div>
-          </div>
-
-          {/* Payment Method Selection */}
-          <div className="form-section">
-            <h2><CreditCard size={22} />Payment Method</h2>
-            <PaymentMethodSelector selected={paymentMethod} onSelect={setPaymentMethod} />
-          </div>
-
-          {/* Payment Form based on selection */}
-          <div className="form-section payment-form-section">
-            {paymentMethod === 'stripe' && clientSecret && stripePromise ? (
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <StripeCheckoutForm clientSecret={clientSecret} orderId={orderId || ''} />
-              </Elements>
-            ) : paymentMethod === 'stripe' ? (
-              <div className="dev-checkout-form">
-                <div className="dev-mode-notice">
-                  <div className="dev-badge">🔧 Development Mode</div>
-                  <p>Stripe not configured. Switch to M-Pesa or PesaPal for testing.</p>
+        <div className="checkout-layout">
+          <div className="checkout-form-section">
+            {/* Shipping Information */}
+            <div className="form-section">
+              <h2>Shipping Information</h2>
+              <div className="form-grid">
+                <div className="form-group full-width">
+                  <label htmlFor="name">Full Name</label>
+                  <input type="text" id="name" name="name" value={shippingInfo.name} onChange={handleInputChange} placeholder="John Doe" required />
                 </div>
-                <button className="pay-btn dev-pay-btn" onClick={handleSuccess}>Simulate Card Payment</button>
+                <div className="form-group">
+                  <label htmlFor="email">Email</label>
+                  <input type="email" id="email" name="email" value={shippingInfo.email} onChange={handleInputChange} placeholder="john@example.com" required />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="phone">Phone</label>
+                  <input type="tel" id="phone" name="phone" value={shippingInfo.phone} onChange={handleInputChange} placeholder="+1 234 567 8900" required />
+                </div>
+                <div className="form-group full-width">
+                  <label htmlFor="address">Address</label>
+                  <input type="text" id="address" name="address" value={shippingInfo.address} onChange={handleInputChange} placeholder="123 Main St" required />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="city">City</label>
+                  <input type="text" id="city" name="city" value={shippingInfo.city} onChange={handleInputChange} placeholder="New York" required />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="country">Country</label>
+                  <input type="text" id="country" name="country" value={shippingInfo.country} onChange={handleInputChange} placeholder="United States" required />
+                </div>
               </div>
-            ) : paymentMethod === 'mpesa' ? (
-              <MpesaCheckoutForm orderId={orderId || ''} onSuccess={handleSuccess} />
-            ) : (
-              <PesaPalCheckoutForm orderId={orderId || ''} onSuccess={handleSuccess} />
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* Order Summary */}
-        <div className="order-summary-section">
-          <div className="summary-card">
-            <h2>Order Summary</h2>
-            <div className="summary-items">
-              {items.map((item) => {
-                const artwork = item.artListing;
-                if (!artwork) return null;
-                const imageUrl = artwork.images?.[0] || '/placeholder.jpg';
-                return (
-                  <div key={item.id} className="summary-item">
-                    <div className="item-image">
-                      <Image src={imageUrl} alt={artwork.title} width={60} height={60} />
-                      <span className="item-quantity">{item.quantity}</span>
-                    </div>
-                    <div className="item-info">
-                      <p className="item-title">{artwork.title}</p>
-                      <p className="item-price">${(artwork.price || 0).toFixed(2)}</p>
-                    </div>
-                    <p className="item-subtotal">${((artwork.price || 0) * item.quantity).toFixed(2)}</p>
+            {/* Payment Method Selection */}
+            <div className="form-section">
+              <h2><CreditCard size={22} />Payment Method</h2>
+              <PaymentMethodSelector selected={paymentMethod} onSelect={setPaymentMethod} />
+            </div>
+
+            {/* Payment Form based on selection */}
+            <div className="form-section payment-form-section">
+              {paymentMethod === 'stripe' && clientSecret && stripePromise ? (
+                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                  <StripeCheckoutForm clientSecret={clientSecret} orderId={orderId || ''} />
+                </Elements>
+              ) : paymentMethod === 'stripe' ? (
+                <div className="dev-checkout-form">
+                  <div className="dev-mode-notice">
+                    <div className="dev-badge">🔧 Development Mode</div>
+                    <p>Stripe not configured. Switch to M-Pesa or PesaPal for testing.</p>
                   </div>
-                );
-              })}
+                  <button className="pay-btn dev-pay-btn" onClick={handleSuccess}>Simulate Card Payment</button>
+                </div>
+              ) : paymentMethod === 'mpesa' ? (
+                <MpesaCheckoutForm orderId={orderId || ''} onSuccess={handleSuccess} />
+              ) : (
+                <PesaPalCheckoutForm orderId={orderId || ''} onSuccess={handleSuccess} />
+              )}
             </div>
-            <div className="summary-totals">
-              <div className="summary-row"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
-              <div className="summary-row">
-                <span>Shipping</span>
-                <span>{shippingCost === 0 ? <span className="free">FREE</span> : `$${shippingCost.toFixed(2)}`}</span>
+          </div>
+
+          {/* Order Summary */}
+          <div className="order-summary-section">
+            <div className="summary-card">
+              <h2>Order Summary</h2>
+              <div className="summary-items">
+                {items.map((item) => {
+                  const artwork = item.artListing;
+                  if (!artwork) return null;
+                  const imageUrl = artwork.images?.[0] || '/placeholder.jpg';
+                  return (
+                    <div key={item.id} className="summary-item">
+                      <div className="item-image">
+                        <Image src={imageUrl} alt={artwork.title} width={60} height={60} />
+                        <span className="item-quantity">{item.quantity}</span>
+                      </div>
+                      <div className="item-info">
+                        <p className="item-title">{artwork.title}</p>
+                        <p className="item-price">${(artwork.price || 0).toFixed(2)}</p>
+                      </div>
+                      <p className="item-subtotal">${((artwork.price || 0) * item.quantity).toFixed(2)}</p>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="summary-row"><span>Tax</span><span>${tax.toFixed(2)}</span></div>
-              <div className="summary-divider"></div>
-              <div className="summary-row total"><span>Total</span><span>${total.toFixed(2)}</span></div>
-            </div>
-            <div className="secure-badge">
-              <Lock size={16} />Secure Checkout
+              <div className="summary-totals">
+                <div className="summary-row"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
+                <div className="summary-row">
+                  <span>Shipping</span>
+                  <span>{shippingCost === 0 ? <span className="free">FREE</span> : `$${shippingCost.toFixed(2)}`}</span>
+                </div>
+                <div className="summary-row"><span>Tax</span><span>${tax.toFixed(2)}</span></div>
+                <div className="summary-divider"></div>
+                <div className="summary-row total"><span>Total</span><span>${total.toFixed(2)}</span></div>
+              </div>
+              <div className="secure-badge">
+                <Lock size={16} />Secure Checkout
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }
 

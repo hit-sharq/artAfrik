@@ -17,20 +17,28 @@ const DEFAULT_CATEGORIES = [
 
 export async function GET() {
   try {
+    console.log("Fetching categories from database...")
+    
     let categories = await prisma.category.findMany({
       orderBy: {
         order: "asc",
       },
     })
 
+    console.log(`Found ${categories.length} categories in database`)
+
     // If no categories exist, create default categories
     if (categories.length === 0) {
       console.log("No categories found, creating default categories...")
       
       for (const defaultCat of DEFAULT_CATEGORIES) {
-        await prisma.category.create({
-          data: defaultCat,
-        })
+        try {
+          await prisma.category.create({
+            data: defaultCat,
+          })
+        } catch (createError) {
+          console.error("Error creating category:", defaultCat.name, createError)
+        }
       }
       
       // Fetch the newly created categories
@@ -39,12 +47,20 @@ export async function GET() {
           order: "asc",
         },
       })
+      console.log(`Created ${categories.length} categories`)
+    }
+
+    // If still no categories (DB might be down), return defaults
+    if (categories.length === 0) {
+      console.log("Database unavailable, returning default categories")
+      return NextResponse.json(DEFAULT_CATEGORIES)
     }
 
     return NextResponse.json(categories)
   } catch (error) {
     console.error("Error fetching categories:", error)
     // Return default categories even if database fails
+    console.log("Returning default categories due to error")
     return NextResponse.json(DEFAULT_CATEGORIES)
   }
 }
