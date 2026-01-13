@@ -23,9 +23,21 @@ interface Artwork {
   images: string[]
 }
 
+interface Artisan {
+  id: string
+  shopName: string | null
+  shopSlug: string | null
+  shopLogo: string | null
+  fullName: string
+  specialty: string
+  shopBio: string | null
+  status: string
+}
+
 export default function Home() {
   const [categoryArtworks, setCategoryArtworks] = useState<Artwork[]>([])
   const [featuredArtworks, setFeaturedArtworks] = useState<Artwork[]>([])
+  const [featuredArtisans, setFeaturedArtisans] = useState<Artisan[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   // Function to select artworks to display based on current date, rotating every 24 hours
@@ -47,7 +59,7 @@ export default function Home() {
   }
 
   useEffect(() => {
-    async function fetchArtworks() {
+    async function fetchData() {
       setIsLoading(true)
       try {
         // Fetch all artworks from gallery with a high limit to get all
@@ -55,23 +67,34 @@ export default function Home() {
         if (!artRes.ok) throw new Error("Failed to fetch gallery artworks")
         const artData: Artwork[] = await artRes.json()
 
+        // Fetch featured artisans
+        const artisansRes = await fetch("/api/artisans?status=APPROVED")
+        let artisansData: Artisan[] = []
+        if (artisansRes.ok) {
+          artisansData = await artisansRes.json()
+        }
+
         // Select up to 2 artworks for categories section
         const selectedCategoryArtworks = selectArtworksToDisplay(artData, Math.min(2, artData.length))
         // Select up to 2 artworks for featured section excluding those selected for categories
         const selectedFeaturedArtworks = selectArtworksToDisplay(artData, Math.min(2, artData.length - selectedCategoryArtworks.length), selectedCategoryArtworks.map(a => a.id))
+        // Select up to 4 featured artisans
+        const selectedArtisans = artisansData.slice(0, 4)
 
         setCategoryArtworks(selectedCategoryArtworks)
         setFeaturedArtworks(selectedFeaturedArtworks)
+        setFeaturedArtisans(selectedArtisans)
       } catch (error) {
-        console.error("Failed to fetch artworks:", error)
+        console.error("Failed to fetch data:", error)
         setCategoryArtworks([])
         setFeaturedArtworks([])
+        setFeaturedArtisans([])
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchArtworks()
+    fetchData()
   }, [])
 
   return (
@@ -91,10 +114,80 @@ export default function Home() {
               <Link href="/contact" className="button secondary-button">
                 Contact Us
               </Link>
+              <Link href="/artisan/register" className="artisan-cta">
+                🎨 Sell on ArtAfrik
+              </Link>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Featured Artisans Section */}
+      {featuredArtisans.length > 0 && (
+        <section className="featured-artisans section">
+          <div className="container">
+            <h2 className="section-title">Meet Our Artisans</h2>
+            <p className="section-subtitle">
+              Discover the talented creators behind our authentic African art. Each artisan brings unique skills and cultural heritage to their craft.
+            </p>
+
+            <div className="artisans-showcase">
+              {isLoading ? (
+                Array(4)
+                  .fill(0)
+                  .map((_, i) => (
+                    <div className="artisan-showcase-card skeleton" key={i}>
+                      <div className="artisan-avatar skeleton-image"></div>
+                      <div className="skeleton-text"></div>
+                      <div className="skeleton-text short"></div>
+                    </div>
+                  ))
+              ) : (
+                featuredArtisans.map((artisan) => (
+                  <Link 
+                    href={`/shop/${artisan.shopSlug}`} 
+                    key={artisan.id} 
+                    className="artisan-showcase-card"
+                    target="_blank"
+                  >
+                    <div className="artisan-avatar">
+                      {artisan.shopLogo ? (
+                        <Image
+                          src={artisan.shopLogo}
+                          alt={artisan.shopName || artisan.fullName}
+                          width={80}
+                          height={80}
+                          style={{ objectFit: "cover", borderRadius: "50%" }}
+                        />
+                      ) : (
+                        (artisan.shopName || artisan.fullName).charAt(0)
+                      )}
+                    </div>
+                    <h3>{artisan.shopName || artisan.fullName}</h3>
+                    <p className="artisan-specialty">{artisan.specialty}</p>
+                    {artisan.shopBio && (
+                      <p className="artisan-bio">
+                        {artisan.shopBio.length > 80 
+                          ? `${artisan.shopBio.substring(0, 80)}...` 
+                          : artisan.shopBio}
+                      </p>
+                    )}
+                    <span className="visit-shop-link">
+                      Visit Shop →
+                    </span>
+                  </Link>
+                ))
+              )}
+            </div>
+
+            <div className="section-cta">
+              <Link href="/artisan/register" className="button primary-button">
+                🎨 Become an Artisan
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="categories section">
         <div className="container">
@@ -227,3 +320,4 @@ export default function Home() {
     </MainLayout>
   )
 }
+

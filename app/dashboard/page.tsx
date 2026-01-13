@@ -92,6 +92,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>([])
   const [uploading, setUploading] = useState(false)
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   // Edit modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -456,38 +457,37 @@ export default function Dashboard() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setUploading(true)
+    setMessage(null)
 
     try {
       const formData = new FormData(e.currentTarget)
 
-      // Add the uploaded files to the form data
-      if (uploadedFiles.length > 0) {
-        // Remove any existing files first
-        formData.delete("images")
+      // Always clear and re-add images from the uploadedFiles state
+      formData.delete("images")
 
-        // Add each file to the form data
-        uploadedFiles.forEach((file) => {
-          formData.append("images", file)
-        })
-      }
+      // Add each file to the form data
+      uploadedFiles.forEach((file) => {
+        formData.append("images", file)
+      })
 
       const result = await createArtListing(formData)
 
       if (result.success) {
-        alert(result.message)
+        setMessage({ type: "success", text: result.message })
         // Clear the form
-        e.currentTarget.reset()
+        if (e.currentTarget) {
+          e.currentTarget.reset()
+        }
         setUploadedFiles([])
-
         // Switch to the art tab to show the new listing
         setActiveTab("art")
         fetchArtListings()
       } else {
-        alert(result.message)
+        setMessage({ type: "error", text: result.message })
       }
     } catch (error) {
       console.error("Error uploading art:", error)
-      alert("There was an error uploading the art. Please try again.")
+      setMessage({ type: "error", text: "An unexpected error occurred. Please try again." })
     } finally {
       setUploading(false)
     }
@@ -537,21 +537,49 @@ export default function Dashboard() {
               <div className="upload-tab">
                 <h2>Upload New Art</h2>
 
+                {/* Message display */}
+                {message && (
+                  <div className={`message ${message.type}`}>
+                    <span>{message.type === "success" ? "✓ " : "⚠ "}</span>
+                    <span style={{ flex: 1, whiteSpace: "pre-line" }}>{message.text}</span>
+                    <button className="message-close" onClick={() => setMessage(null)}>×</button>
+                  </div>
+                )}
+
                 <form className="upload-form" onSubmit={handleSubmit}>
                   <div className="form-group">
                     <label htmlFor="title">Art Title</label>
-                    <input type="text" id="title" name="title" required />
+                    <input
+                      type="text"
+                      id="title"
+                      name="title"
+                      required
+                      onChange={() => setMessage(null)}
+                      placeholder="Enter a descriptive title for your art piece"
+                    />
                   </div>
 
                   <div className="form-group">
                     <label htmlFor="description">Description</label>
-                    <textarea id="description" name="description" rows={5} required></textarea>
+                    <textarea
+                      id="description"
+                      name="description"
+                      rows={5}
+                      required
+                      onChange={() => setMessage(null)}
+                      placeholder="Describe your art piece, including inspiration, technique, and cultural significance..."
+                    ></textarea>
                   </div>
 
                   <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="categoryId">Category</label>
-                      <select id="categoryId" name="categoryId" required>
+                      <select
+                        id="categoryId"
+                        name="categoryId"
+                        required
+                        onChange={() => setMessage(null)}
+                      >
                         <option value="">Select Category</option>
                         {categories.map((category) => (
                           <option key={category.id} value={category.id}>
@@ -563,7 +591,12 @@ export default function Dashboard() {
 
                     <div className="form-group">
                       <label htmlFor="region">Region</label>
-                      <select id="region" name="region" required>
+                      <select
+                        id="region"
+                        name="region"
+                        required
+                        onChange={() => setMessage(null)}
+                      >
                         <option value="">Select Region</option>
                         <option value="West Africa">West Africa</option>
                         <option value="East Africa">East Africa</option>
@@ -576,12 +609,28 @@ export default function Dashboard() {
                   <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="price">Price ($)</label>
-                      <input type="number" id="price" name="price" min="0" step="0.01" required />
+                      <input
+                        type="number"
+                        id="price"
+                        name="price"
+                        min="0"
+                        step="0.01"
+                        required
+                        onChange={() => setMessage(null)}
+                        placeholder="0.00"
+                      />
                     </div>
 
                     <div className="form-group">
                       <label htmlFor="size">Size</label>
-                      <input type="text" id="size" name="size" placeholder='e.g., 12" x 6" x 3"' required />
+                      <input
+                        type="text"
+                        id="size"
+                        name="size"
+                        placeholder='e.g., 12" x 6" x 3"'
+                        required
+                        onChange={() => setMessage(null)}
+                      />
                     </div>
                   </div>
 

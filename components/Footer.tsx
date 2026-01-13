@@ -48,6 +48,9 @@ export default function Footer() {
                 <Link href="/gallery">Gallery</Link>
               </li>
               <li>
+                <Link href="/blog">Blog</Link>
+              </li>
+              <li>
                 <Link href="/about">About Us</Link>
               </li>
               <li>
@@ -83,8 +86,8 @@ export default function Footer() {
           <div className="footer-section">
             <h3>Contact Us</h3>
             <p>Email: artafrik.gallery@gmail.com</p>
-            <p>Phone: +254 758 251 399 | +254 794 773 452</p>
-            <p>Hours: Monday - Friday, 9am - 5pm</p>
+            <p>Phone: +254 794 773 452</p>
+            <p>Hours: Mon- Sun, 9am - 5pm</p>
           </div>
         </div>
 

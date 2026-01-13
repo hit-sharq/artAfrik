@@ -36,6 +36,11 @@ model ArtListing {
   size        String
   images      String[] // Array of image URLs
   featured    Boolean  @default(false)
+  
+  // Artisan relation (optional - not all listings need an artisan)
+  artisanId   String?
+  artisan     Artisan? @relation(fields: [artisanId], references: [id])
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -93,4 +98,57 @@ model TeamMember {
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// Artisan Registration Status
+enum ArtisanStatus {
+  PENDING      // Awaiting admin approval
+  APPROVED     // Approved, can manage shop
+  REJECTED     // Rejected by admin
+}
+
+// Artisan Model for Multi-Vendor Marketplace
+model Artisan {
+  id              String   @id @default(cuid())
+  
+  // Authentication
+  email           String   @unique
+  clerkId         String?  @unique  // For authentication
+  
+  // Registration Details
+  fullName        String
+  phone           String?
+  specialty       String   // e.g., "Beadwork", "Woodcarving", "Textiles", "Jewelry", "Paintings"
+  region          String
+  location        String?  // Village/city
+  yearsExperience Int?
+  
+  // Shop Details (set after approval)
+  shopName        String?  @unique
+  shopSlug        String?  @unique
+  shopBio         String?  @db.Text
+  shopLogo        String?
+  shopBanner      String?
+  
+  // Social Links
+  website         String?
+  instagram       String?
+  facebook        String?
+  whatsapp        String?
+  
+  // Approval
+  status          ArtisanStatus @default(PENDING)
+  rejectionReason String?
+  approvedAt      DateTime?
+  approvedBy      String?
+  
+  // Verification
+  isVerified      Boolean  @default(false)
+  
+  // Relations
+  artListings     ArtListing[]
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

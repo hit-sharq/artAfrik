@@ -6,13 +6,27 @@ import { usePathname } from "next/navigation"
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
 import { useTheme } from "next-themes"
 import { isAdmin } from "@/lib/auth"
+import { useCart } from "@/contexts/CartContext"
+import { ShoppingCart, Heart } from "lucide-react"
+import { useWishlist } from "@/contexts/WishlistContext"
 import "./Header.css"
+
+interface ArtisanData {
+  id: string
+  shopName: string | null
+  shopSlug: string | null
+  status: string
+}
 
 const Header = () => {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isUserAdmin, setIsUserAdmin] = useState(false)
+  const [isArtisan, setIsArtisan] = useState(false)
+  const [artisanData, setArtisanData] = useState<ArtisanData | null>(null)
   const { theme, setTheme } = useTheme()
+  const { itemCount, openCart } = useCart()
+  const { itemCount: wishlistCount, openWishlist } = useWishlist()
 
   const isActive = (path: string) => {
     return pathname === path ? "active" : ""
@@ -29,7 +43,6 @@ const Header = () => {
   useEffect(() => {
     const checkAdminStatus = async () => {
       try {
-        // Check admin status via API route for client components
         const response = await fetch("/api/check-admin")
         const data = await response.json()
         setIsUserAdmin(data.isAdmin)
@@ -39,7 +52,33 @@ const Header = () => {
       }
     }
 
+    const checkArtisanStatus = async () => {
+      try {
+        const response = await fetch("/api/artisans/me")
+        if (response.ok) {
+          const data = await response.json()
+          setIsArtisan(true)
+          setArtisanData({
+            id: data.id,
+            shopName: data.shopName,
+            shopSlug: data.shopSlug,
+            status: data.status,
+          })
+        } else if (response.status === 404) {
+          // User is not registered as an artisan - this is expected for most users
+          setIsArtisan(false)
+          setArtisanData(null)
+        }
+        // For 403 (pending/rejected), user is not an approved artisan
+      } catch (error) {
+        // Silently fail - user is not an artisan or network error
+        setIsArtisan(false)
+        setArtisanData(null)
+      }
+    }
+
     checkAdminStatus()
+    checkArtisanStatus()
   }, [])
 
   return (
@@ -64,26 +103,42 @@ const Header = () => {
                   Home
                 </Link>
               </li>
-              <li className={isActive("/gallery")}>
-                <Link href="/gallery" onClick={() => setMobileMenuOpen(false)}>
-                  Gallery
-                </Link>
-              </li>
-              <li className={isActive("/blog")}>
-                <Link href="/blog" onClick={() => setMobileMenuOpen(false)}>
-                  Blog
-                </Link>
-              </li>
-              <li className={isActive("/contact")}>
-                <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>
-                  Contact
-                </Link>
-              </li>
+              <SignedIn>
+                <li className={isActive("/user-dashboard")}>
+                  <Link href="/user-dashboard" onClick={() => setMobileMenuOpen(false)}>
+                    Dashboard
+                  </Link>
+                </li>
+              </SignedIn>
+              <SignedOut>
+                <li className={`artisan-link ${isActive("/artisan/register")}`}>
+                  <Link 
+                    href="/artisan/register" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={{ color: '#e67e22', fontWeight: 600 }}
+                  >
+                    🎨 Sell on ArtAfrik
+                  </Link>
+                </li>
+              </SignedOut>
             </ul>
 
             <div className="auth-buttons">
+              {/* Cart Button - Always visible */}
+              <button className="cart-button" onClick={openCart} aria-label="Open cart">
+                <ShoppingCart size={20} />
+                {itemCount > 0 && <span className="cart-count">{itemCount}</span>}
+              </button>
+
+              {/* Wishlist Button - Always visible */}
+              <button className="wishlist-button" onClick={openWishlist} aria-label="Open wishlist">
+                <Heart size={20} />
+                {wishlistCount > 0 && <span className="wishlist-count">{wishlistCount}</span>}
+              </button>
+
               <SignedIn>
                 <div className="user-section">
+                  {/* Admin Dashboard - Highest priority */}
                   {isUserAdmin && (
                     <Link
                       href="/dashboard"
@@ -93,13 +148,31 @@ const Header = () => {
                       Admin
                     </Link>
                   )}
-                  <Link
-                    href="/user-dashboard"
-                    className={`dashboard-link ${isActive("/user-dashboard")}`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
+
+                  {/* Artisan Links - For approved artisans */}
+                  {isArtisan && artisanData?.status === "APPROVED" && (
+                    <>
+                      <Link
+                        href="/artisan/dashboard"
+                        className={`dashboard-link artisan-dashboard-link ${isActive("/artisan/dashboard")}`}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        🎨 Dashboard
+                      </Link>
+                      {artisanData.shopSlug && (
+                        <Link
+                          href={`/shop/${artisanData.shopSlug}`}
+                          className={`dashboard-link artisan-shop-link`}
+                          onClick={() => setMobileMenuOpen(false)}
+                          target="_blank"
+                        >
+                          🏪 My Shop
+                        </Link>
+                      )}
+                    </>
+                  )}
+
+                  {/* User Account Button */}
                   <UserButton afterSignOutUrl="/" />
                 </div>
               </SignedIn>
@@ -112,6 +185,8 @@ const Header = () => {
                   Sign Up
                 </Link>
               </SignedOut>
+
+              {/* Theme Toggle - Always visible */}
               <button className="theme-toggle-button" onClick={toggleTheme} aria-label="Toggle Dark Mode">
                 {theme === "dark" ? "🌞" : "🌙"}
               </button>
@@ -124,3 +199,4 @@ const Header = () => {
 }
 
 export default Header
+

@@ -1,21 +1,51 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
+// Default categories to use if none exist in the database
+const DEFAULT_CATEGORIES = [
+  { name: "Paintings", slug: "paintings", description: "Traditional and contemporary African paintings", order: 1 },
+  { name: "Sculptures", slug: "sculptures", description: "Wood, stone, and metal sculptures", order: 2 },
+  { name: "Textiles", slug: "textiles", description: "Fabrics, woven goods, and clothing", order: 3 },
+  { name: "Jewelry", slug: "jewelry", description: "Beadwork, metalwork, and decorative accessories", order: 4 },
+  { name: "Pottery", slug: "pottery", description: "Clay vessels and ceramic art", order: 5 },
+  { name: "Woodcarving", slug: "woodcarving", description: "Carved wooden art and functional items", order: 6 },
+  { name: "Basketry", slug: "basketry", description: "Woven baskets and containers", order: 7 },
+  { name: " Masks", slug: "masks", description: "Traditional and decorative masks", order: 8 },
+  { name: "Leatherwork", slug: "leatherwork", description: "Leather goods and accessories", order: 9 },
+  { name: "Metalwork", slug: "metalwork", description: "Iron, bronze, and other metal crafts", order: 10 },
+]
+
 export async function GET() {
   try {
-    const categories = await prisma.category.findMany({
+    let categories = await prisma.category.findMany({
       orderBy: {
         order: "asc",
       },
     })
 
+    // If no categories exist, create default categories
+    if (categories.length === 0) {
+      console.log("No categories found, creating default categories...")
+      
+      for (const defaultCat of DEFAULT_CATEGORIES) {
+        await prisma.category.create({
+          data: defaultCat,
+        })
+      }
+      
+      // Fetch the newly created categories
+      categories = await prisma.category.findMany({
+        orderBy: {
+          order: "asc",
+        },
+      })
+    }
+
     return NextResponse.json(categories)
   } catch (error) {
     console.error("Error fetching categories:", error)
-    return NextResponse.json(
-      { error: "Failed to fetch categories" },
-      { status: 500 }
-    )
+    // Return default categories even if database fails
+    return NextResponse.json(DEFAULT_CATEGORIES)
   }
 }
 

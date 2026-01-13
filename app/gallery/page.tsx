@@ -8,10 +8,20 @@ import Image from "next/image"
 import { useSearchParams } from "next/navigation"
 import MainLayout from "../../components/MainLayout"
 import QuickViewModal from "../../components/QuickViewModal"
+import AddToCartButton from "../../components/AddToCartButton"
+import { ArtListingType } from "@/types"
 import "./gallery.css"
 
 // Import the cloudinaryLoader
 import { cloudinaryLoader } from "@/lib/cloudinary"
+
+interface Artisan {
+  id: string
+  shopName: string | null
+  shopSlug: string | null
+  fullName: string
+  specialty: string
+}
 
 interface ArtListing {
   id: string
@@ -26,16 +36,20 @@ interface ArtListing {
   price: number
   image?: string
   images?: string[]
+  artisanId: string | null
+  artisan: Artisan | null
 }
 
 export default function Gallery() {
   const searchParams = useSearchParams()
   const initialCategory = searchParams.get("category") || ""
   const initialRegion = searchParams.get("region") || ""
+  const initialArtisan = searchParams.get("artisan") || ""
 
   const [filters, setFilters] = useState({
     category: initialCategory,
     region: initialRegion,
+    artisan: initialArtisan,
     priceRange: "",
     sortBy: "newest",
   })
@@ -44,6 +58,7 @@ export default function Gallery() {
   const [filteredArt, setFilteredArt] = useState<ArtListing[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [artisans, setArtisans] = useState<Artisan[]>([])
 
   // Quick view modal state
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -66,7 +81,7 @@ export default function Gallery() {
   ]
 
   useEffect(() => {
-    // Fetch categories and art listings from the database
+    // Fetch categories, artisans and art listings from the database
     const fetchData = async () => {
       setIsLoading(true)
       try {
@@ -75,6 +90,13 @@ export default function Gallery() {
         if (categoriesResponse.ok) {
           const categoriesData = await categoriesResponse.json()
           setCategories(categoriesData)
+        }
+
+        // Fetch approved artisans
+        const artisansResponse = await fetch("/api/artisans?status=APPROVED")
+        if (artisansResponse.ok) {
+          const artisansData = await artisansResponse.json()
+          setArtisans(artisansData)
         }
 
         // Fetch art listings
@@ -115,6 +137,11 @@ export default function Gallery() {
     // Filter by region
     if (filters.region && filters.region !== "All") {
       result = result.filter((art) => art.region === filters.region)
+    }
+
+    // Filter by artisan
+    if (filters.artisan) {
+      result = result.filter((art) => art.artisanId === filters.artisan)
     }
 
     // Filter by price range
@@ -178,6 +205,7 @@ export default function Gallery() {
     setFilters({
       category: "",
       region: "",
+      artisan: "",
       priceRange: "",
       sortBy: "newest",
     })
@@ -198,6 +226,24 @@ export default function Gallery() {
     setIsModalOpen(false)
   }
 
+  // Get artisan name for display
+  const getArtisanName = (art: ArtListing) => {
+    if (art.artisan?.shopName) {
+      return art.artisan.shopName
+    }
+    if (art.artisan?.fullName) {
+      return art.artisan.fullName
+    }
+    return null
+  }
+
+  // Get featured artisans (those with products in gallery)
+  const featuredArtisans = Array.isArray(artisans) 
+    ? artisans.filter((artisan) => 
+        artListings.some((art) => art.artisanId === artisan.id)
+      ).slice(0, 4)
+    : []
+
   return (
     <MainLayout>
       <div className="gallery-page">
@@ -209,6 +255,31 @@ export default function Gallery() {
               artistic excellence.
             </p>
           </div>
+
+          {/* Featured Artisans Section */}
+          {featuredArtisans.length > 0 && (
+            <div className="featured-artisans-section">
+              <h2>Shop by Artisan</h2>
+              <div className="featured-artisans-grid">
+                {featuredArtisans.map((artisan) => (
+                  <Link 
+                    key={artisan.id} 
+                    href={`/shop/${artisan.shopSlug}`}
+                    className="featured-artisan-card"
+                    target="_blank"
+                  >
+                    <div className="artisan-avatar">
+                      {artisan.shopName?.charAt(0) || artisan.fullName.charAt(0)}
+                    </div>
+                    <div className="artisan-info">
+                      <h3>{artisan.shopName || artisan.fullName}</h3>
+                      <p>{artisan.specialty}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="gallery-controls">
             <div className="filters-container">
@@ -236,6 +307,18 @@ export default function Gallery() {
                           {region}
                         </option>
                       ))}
+                  </select>
+                </div>
+
+                <div className="filter-group">
+                  <label htmlFor="artisan">Artisan</label>
+                  <select id="artisan" name="artisan" value={filters.artisan} onChange={handleFilterChange}>
+                    <option value="">All Artisans</option>
+                    {Array.isArray(artisans) && artisans.map((artisan) => (
+                      <option key={artisan.id} value={artisan.id}>
+                        {artisan.shopName || artisan.fullName}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -298,34 +381,47 @@ export default function Gallery() {
             </div>
           ) : filteredArt.length > 0 ? (
             <div className={`gallery-${viewMode}`}>
-              {currentItems.map((art) => (
-                <div className={`art-card ${viewMode === "list" ? "list-view" : ""}`} key={art.id}>
-                  <div className="art-image">
-                    <Image
-                      src={art.image || art.images?.[0] || "/placeholder.svg"}
-                      alt={art.title}
-                      fill
-                      style={{ objectFit: "cover" }}
-                      loader={cloudinaryLoader}
-                    />
-                    <div className="art-overlay">
-                      <a href="#" className="quick-view" onClick={(e) => openQuickView(art.id, e)}>
-                        Quick View
-                      </a>
+              {currentItems.map((art) => {
+                const artisanName = getArtisanName(art)
+                return (
+                  <div className={`art-card ${viewMode === "list" ? "list-view" : ""}`} key={art.id}>
+                    <div className="art-image">
+                      <Image
+                        src={art.image || art.images?.[0] || "/placeholder.svg"}
+                        alt={art.title}
+                        fill
+                        style={{ objectFit: "cover" }}
+                        loader={cloudinaryLoader}
+                      />
+                      <div className="art-overlay">
+                        <a href="#" className="quick-view" onClick={(e) => openQuickView(art.id, e)}>
+                          Quick View
+                        </a>
+                      </div>
+                    </div>
+                    <div className="art-info">
+                      <h3>{art.title}</h3>
+                      <p className="art-details">
+                        {art.category.name} • {art.region}
+                      </p>
+                      {artisanName && art.artisan?.shopSlug && (
+                        <p className="art-artisan">
+                          <Link href={`/shop/${art.artisan.shopSlug}`} target="_blank">
+                            🏪 {artisanName}
+                          </Link>
+                        </p>
+                      )}
+                      <p className="art-price">${art.price.toFixed(2)}</p>
+<div className="art-actions">
+                        <AddToCartButton artwork={art as unknown as ArtListingType} variant="default" />
+                        <Link href={`/gallery/${art.id}`} className="button view-button">
+                          View Details
+                        </Link>
+                      </div>
                     </div>
                   </div>
-                  <div className="art-info">
-                    <h3>{art.title}</h3>
-                    <p className="art-details">
-                      {art.category.name} • {art.region}
-                    </p>
-                    <p className="art-price">${art.price.toFixed(2)}</p>
-                    <Link href={`/gallery/${art.id}`} className="button view-button">
-                      View Details
-                    </Link>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <div className="no-results">
@@ -345,7 +441,7 @@ export default function Gallery() {
                 disabled={currentPage === 1}
                 aria-label="Previous page"
               >
-                &lt;
+                Previous
               </button>
               <div className="pagination-pages">
                 {Array.from({ length: Math.min(5, Math.ceil(filteredArt.length / itemsPerPage)) }, (_, i) => {
@@ -368,7 +464,7 @@ export default function Gallery() {
                 disabled={currentPage === Math.ceil(filteredArt.length / itemsPerPage)}
                 aria-label="Next page"
               >
-                &gt;
+                Next
               </button>
             </div>
           )}
@@ -380,3 +476,4 @@ export default function Gallery() {
     </MainLayout>
   )
 }
+

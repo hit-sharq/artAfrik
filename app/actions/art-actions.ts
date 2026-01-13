@@ -12,11 +12,11 @@ cloudinary.config({
 })
 
 export async function createArtListing(formData: FormData) {
-  const { userId } = await auth()  // Get userId from Clerk auth
-  if (!(await isAdmin(userId ?? undefined))) {  // Pass userId to isAdmin, handle null case
+  const { userId } = await auth()
+  if (!(await isAdmin(userId ?? undefined))) {
     return {
       success: false,
-      message: "Unauthorized. Only admins can create art listings.",
+      message: "Unauthorized: You don't have permission to create art listings. Please sign in as an admin.",
     }
   }
 
@@ -30,17 +30,42 @@ export async function createArtListing(formData: FormData) {
     const size = formData.get("size") as string
     const featured = formData.get("featured") === "on"
 
-    // Validate required fields
-    if (!title || !description || !categoryId || !region || isNaN(price) || !size) {
+    // Validate required fields with specific error messages
+    const validationErrors: string[] = []
+    if (!title || title.trim().length === 0) {
+      validationErrors.push("Please enter a title for your art piece")
+    }
+    if (!description || description.trim().length === 0) {
+      validationErrors.push("Please provide a description for your art piece")
+    }
+    if (!categoryId) {
+      validationErrors.push("Please select a category")
+    }
+    if (!region) {
+      validationErrors.push("Please select a region")
+    }
+    if (isNaN(price) || price <= 0) {
+      validationErrors.push("Please enter a valid price greater than 0")
+    }
+    if (!size || size.trim().length === 0) {
+      validationErrors.push("Please specify the size of your art piece")
+    }
+
+    if (validationErrors.length > 0) {
       return {
         success: false,
-        message: "Please fill in all required fields",
+        message: "Please fix the following errors:\n• " + validationErrors.join("\n• "),
       }
     }
 
     // Get the uploaded images from the form
     const uploadedImages = formData.getAll("images") as File[]
     let images: string[] = []
+
+    // Validate that at least one image is uploaded
+    if (!uploadedImages || uploadedImages.length === 0 || !(uploadedImages[0] instanceof File) || uploadedImages[0].size === 0) {
+      validationErrors.push("Please select at least one image to upload for your art piece")
+    }
 
     // If we have uploaded images, process them
     if (
@@ -49,20 +74,43 @@ export async function createArtListing(formData: FormData) {
       uploadedImages[0] instanceof File &&
       uploadedImages[0].size > 0
     ) {
+      // Validate images
+      const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+      const maxFileSize = 10 * 1024 * 1024 // 10MB
+
+      for (const file of uploadedImages) {
+        if (!allowedTypes.includes(file.type)) {
+          return {
+            success: false,
+            message: `Invalid file type: ${file.name}. Please upload only JPEG, PNG, GIF, or WebP images.`,
+          }
+        }
+        if (file.size > maxFileSize) {
+          return {
+            success: false,
+            message: `File too large: ${file.name}. Maximum file size is 10MB.`,
+          }
+        }
+      }
+
       // Upload each image to Cloudinary
       for (const file of uploadedImages) {
         try {
-          // Convert File to buffer or stream as needed
           const arrayBuffer = await file.arrayBuffer()
           const buffer = Buffer.from(arrayBuffer)
 
-          // Upload to Cloudinary
-          const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
+          const uploadResult = await new Promise<{ secure_url: string; error?: any }>((resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
-              { folder: "arts_afrik" },
+              {
+                folder: "arts_afrik",
+                resource_type: "image",
+                transformation: [
+                  { quality: "auto:best" },
+                  { fetch_format: "auto" }
+                ]
+              },
               (error: any, result: any) => {
                 if (error) {
-                  console.error("Cloudinary upload error:", error)
                   reject(error)
                 } else {
                   resolve(result as { secure_url: string })
@@ -73,19 +121,20 @@ export async function createArtListing(formData: FormData) {
           })
 
           images.push(uploadResult.secure_url)
-        } catch (uploadError) {
-          console.error("Error uploading image to Cloudinary:", uploadError)
-          // Abort upload process on error
+        } catch (uploadError: any) {
+          console.error("Cloudinary upload error:", uploadError)
+          const errorMessage = uploadError.message || uploadError.error?.message || "Unknown upload error"
           return {
             success: false,
-            message: `Error uploading image: ${
-              uploadError instanceof Error
-                ? uploadError.message
-                : typeof uploadError === "object"
-                ? JSON.stringify(uploadError)
-                : String(uploadError)
-            }`,
+            message: `Failed to upload image "${file.name}": ${errorMessage}. Please try again or use a different image.`,
           }
+        }
+      }
+
+      if (images.length === 0) {
+        return {
+          success: false,
+          message: "No images were successfully uploaded. Please try uploading your images again.",
         }
       }
     } else {
@@ -96,37 +145,53 @@ export async function createArtListing(formData: FormData) {
     // Create the art listing in the database
     const artListing = await prisma.artListing.create({
       data: {
-        title,
-        description,
+        title: title.trim(),
+        description: description.trim(),
         categoryId,
-        material,
+        material: material.trim(),
         region,
         price,
-        size,
+        size: size.trim(),
         featured,
         images,
       },
     })
 
-    // Make sure to revalidate both the gallery and home pages
     revalidatePath("/gallery")
     revalidatePath("/")
     revalidatePath("/dashboard")
 
     return {
       success: true,
-      message: "Art listing created successfully",
+      message: `Success! "${title}" has been uploaded and is now visible in the gallery.`,
       artId: artListing.id,
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating art listing:", error)
-    if (error instanceof Error) {
-      console.error("Error message:", error.message)
-      console.error("Error stack:", error.stack)
+    
+    // Provide specific error messages based on the error type
+    if (error.code === "P2002") {
+      return {
+        success: false,
+        message: "An art listing with similar details already exists. Please modify the title or description.",
+      }
     }
+    if (error.code === "P2025") {
+      return {
+        success: false,
+        message: "The category you selected doesn't exist. Please refresh the page and try again.",
+      }
+    }
+    if (error.name === "PrismaClientInitializationError") {
+      return {
+        success: false,
+        message: "Database connection error. Please check your connection and try again.",
+      }
+    }
+    
     return {
       success: false,
-      message: "There was an error creating the art listing. Please try again.",
+      message: "Unable to save the art listing. Our team has been notified. Please try again in a few minutes.",
     }
   }
 }

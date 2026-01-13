@@ -304,6 +304,28 @@
   transition: all 0.3s ease;
 }
 
+.art-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.art-actions .addtocart-wrapper {
+  flex: 1;
+}
+
+.art-actions .addtocart-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.art-actions .view-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .no-results {
   text-align: center;
   padding: 50px 20px;
@@ -599,6 +621,92 @@
 .view-toggle:focus {
   outline: 2px solid var(--accent-color);
   outline-offset: 2px;
+}
+
+/* Featured Artisans Section */
+.featured-artisans-section {
+  margin-bottom: 40px;
+  padding: 30px;
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+}
+
+.featured-artisans-section h2 {
+  color: var(--primary-color);
+  margin-bottom: 20px;
+  font-size: 1.4rem;
+}
+
+.featured-artisans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.featured-artisan-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.featured-artisan-card:hover {
+  background: white;
+  border-color: var(--accent-color);
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.artisan-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.artisan-info h3 {
+  margin: 0 0 4px 0;
+  font-size: 1rem;
+  color: var(--primary-color);
+}
+
+.artisan-info p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* Artisan link in art card */
+.art-artisan {
+  margin-bottom: 8px;
+}
+
+.art-artisan a {
+  color: #e67e22;
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.2s ease;
+}
+
+.art-artisan a:hover {
+  color: #d35400;
+  text-decoration: underline;
 }
 
 /* Transition animations */
