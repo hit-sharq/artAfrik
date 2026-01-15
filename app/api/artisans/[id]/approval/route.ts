@@ -2,17 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "lib/prisma"
 import { auth } from "@clerk/nextjs/server"
 import { isAdmin } from "lib/auth"
-import { sendArtisanApprovedEmail } from "lib/email-service"
-
-// Generate a random token
-function generateToken(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-  let token = ""
-  for (let i = 0; i < 64; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return token
-}
+import { sendArtisanApprovedEmail, sendArtisanRejectedEmail } from "lib/email-service"
 
 // Approve artisan registration
 export async function POST(
@@ -67,10 +57,6 @@ export async function POST(
       shopSlug = `${baseSlug}-${id.slice(-6)}`
     }
 
-    // Generate a verification token for account linking
-    const verificationToken = generateToken()
-    const tokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
-
     const updatedArtisan = await prisma.artisan.update({
       where: { id },
       data: {
@@ -78,19 +64,17 @@ export async function POST(
         approvedAt: new Date(),
         approvedBy: userId,
         shopSlug,
-        verificationToken,
-        verificationExpiry: tokenExpiry,
       },
     })
 
-    // Send approval email with verification link
+    // Send approval email with shop link
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-    const verificationLink = `${appUrl}/artisan/complete-registration?token=${verificationToken}`
+    const shopUrl = `${appUrl}/shop/${shopSlug}`
 
     await sendArtisanApprovedEmail(artisan.email, {
       fullName: artisan.fullName,
       shopName: artisan.shopName || artisan.fullName,
-      shopUrl: verificationLink,
+      shopUrl: shopUrl,
     })
 
     // Create in-app notification
@@ -99,10 +83,10 @@ export async function POST(
         userId: artisan.clerkId || undefined,
         type: "ACCOUNT_UPDATE",
         title: "Artisan Account Approved",
-        message: `Congratulations! Your artisan application has been approved. Click here to link your account and start selling.`,
+        message: `Congratulations! Your artisan application has been approved. Your shop "${artisan.shopName || artisan.fullName}" is now live!`,
         metadata: {
           artisanId: artisan.id,
-          actionUrl: verificationLink,
+          actionUrl: shopUrl,
         },
       },
     })
@@ -176,6 +160,25 @@ export async function DELETE(
       data: {
         status: "REJECTED",
         rejectionReason: reason || "Your registration was not approved.",
+      },
+    })
+
+    // Send rejection email
+    await sendArtisanRejectedEmail(artisan.email, {
+      fullName: artisan.fullName,
+      reason: reason || "Your registration was not approved at this time.",
+    })
+
+    // Create in-app notification
+    await prisma.notification.create({
+      data: {
+        userId: artisan.clerkId || undefined,
+        type: "ACCOUNT_UPDATE",
+        title: "Artisan Application Update",
+        message: reason || "Unfortunately, your artisan application was not approved at this time.",
+        metadata: {
+          artisanId: artisan.id,
+        },
       },
     })
 

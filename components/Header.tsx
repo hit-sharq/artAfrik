@@ -9,6 +9,7 @@ import { isAdmin } from "@/lib/auth"
 import { useCart } from "@/contexts/CartContext"
 import { ShoppingCart, Heart } from "lucide-react"
 import { useWishlist } from "@/contexts/WishlistContext"
+import NotificationBell from "./NotificationBell"
 import "./Header.css"
 
 interface ArtisanData {
@@ -184,6 +185,9 @@ const Header = () => {
 
                   {/* User Account Button */}
                   <UserButton afterSignOutUrl="/" />
+                  
+                  {/* Notification Bell - For signed in users */}
+                  <NotificationBell />
                 </div>
               </SignedIn>
 
