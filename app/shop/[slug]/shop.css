@@ -4,6 +4,27 @@
   background: #faf8f5;
 }
 
+/* Back Button */
+.shop-back-button {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 30px 0;
+}
+
+.shop-back-button .back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.shop-back-button .back-link:hover {
+  color: #c9a227;
+}
+
 /* Shop Header */
 .shop-header {
   background: white;

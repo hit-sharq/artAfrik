@@ -103,6 +103,16 @@ const Header = () => {
                   Home
                 </Link>
               </li>
+              <li className={isActive("/shop")}>
+                <Link href="/shop" onClick={() => setMobileMenuOpen(false)}>
+                  Shops
+                </Link>
+              </li>
+              <li className={isActive("/gallery")}>
+                <Link href="/gallery" onClick={() => setMobileMenuOpen(false)}>
+                  Gallery
+                </Link>
+              </li>
               <SignedIn>
                 <li className={isActive("/user-dashboard")}>
                   <Link href="/user-dashboard" onClick={() => setMobileMenuOpen(false)}>

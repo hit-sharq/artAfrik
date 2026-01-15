@@ -18,7 +18,26 @@ import { deleteTeamMember } from "../actions/team-actions"
 import { cloudinaryLoader } from "@/lib/cloudinary"
 
 // Define a type for the active tab to ensure type safety
-type ActiveTabType = "orders" | "art" | "upload" | "blog" | "team" | "categories"
+type ActiveTabType = "orders" | "art" | "upload" | "blog" | "team" | "categories" | "artisans"
+
+interface Artisan {
+  id: string
+  email: string
+  fullName: string
+  phone: string | null
+  specialty: string
+  region: string
+  location: string | null
+  yearsExperience: number | null
+  shopBio: string | null
+  status: "PENDING" | "APPROVED" | "REJECTED"
+  rejectionReason: string | null
+  createdAt: string
+  approvedAt: string | null
+  _count: {
+    artListings: number
+  }
+}
 
 interface ArtListing {
   id: string
@@ -88,6 +107,8 @@ export default function Dashboard() {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [categories, setCategories] = useState<any[]>([])
+  const [artisans, setArtisans] = useState<Artisan[]>([])
+  const [artisanFilter, setArtisanFilter] = useState<string>("PENDING")
   const [isAdmin, setIsAdmin] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>([])
@@ -163,6 +184,8 @@ export default function Dashboard() {
         fetchCategories()
       } else if (activeTab === "upload") {
         fetchCategories()
+      } else if (activeTab === "artisans") {
+        fetchArtisans()
       }
     }
   }, [activeTab, isAdmin, isLoading])
@@ -266,6 +289,24 @@ export default function Dashboard() {
     } catch (error) {
       console.error("Error fetching categories:", error)
       setCategories([])
+    }
+  }
+
+  // Fetch artisans
+  const fetchArtisans = async (status?: string) => {
+    try {
+      const url = status ? `/api/artisans?status=${status}` : "/api/artisans"
+      const response = await fetch(url)
+      if (response.ok) {
+        const data = await response.json()
+        setArtisans(data.artisans || [])
+      } else {
+        console.error("Failed to fetch artisans")
+        setArtisans([])
+      }
+    } catch (error) {
+      console.error("Error fetching artisans:", error)
+      setArtisans([])
     }
   }
 
@@ -436,6 +477,41 @@ export default function Dashboard() {
       } catch (error) {
         console.error("Error deleting category:", error)
       }
+    }
+  }
+
+  // Artisan management functions
+  const handleApproveArtisan = async (id: string) => {
+    try {
+      const response = await fetch(`/api/artisans/${id}/approval`, {
+        method: "POST",
+      })
+      if (!response.ok) {
+        throw new Error("Failed to approve artisan")
+      }
+      // Refresh the artisans list
+      fetchArtisans()
+    } catch (error) {
+      console.error("Error approving artisan:", error)
+      alert("Failed to approve artisan")
+    }
+  }
+
+  const handleRejectArtisan = async (id: string, reason: string) => {
+    try {
+      const response = await fetch(`/api/artisans/${id}/approval`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      })
+      if (!response.ok) {
+        throw new Error("Failed to reject artisan")
+      }
+      // Refresh the artisans list
+      fetchArtisans()
+    } catch (error) {
+      console.error("Error rejecting artisan:", error)
+      alert("Failed to reject artisan")
     }
   }
 
@@ -851,6 +927,12 @@ export default function Dashboard() {
               >
                 Categories
               </button>
+              <button
+                className={`tab-button ${activeTab === ("artisans" as ActiveTabType) ? "active" : ""}`}
+                onClick={() => setActiveTab("artisans")}
+              >
+                Artisans
+              </button>
             </div>
 
           <div className="dashboard-content">
@@ -1111,6 +1193,162 @@ export default function Dashboard() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Artisans Tab */}
+      {activeTab === "artisans" && (
+        <div className="artisans-tab">
+          <h2>Artisan Registrations</h2>
+
+          <div className="artisan-filter-tabs" style={{ marginBottom: "20px" }}>
+            <button
+              className={`filter-btn ${artisanFilter === "PENDING" ? "active" : ""}`}
+              onClick={() => {
+                setArtisanFilter("PENDING")
+                fetchArtisans("PENDING")
+              }}
+            >
+              Pending ({artisans.filter((a) => a.status === "PENDING").length})
+            </button>
+            <button
+              className={`filter-btn ${artisanFilter === "APPROVED" ? "active" : ""}`}
+              onClick={() => {
+                setArtisanFilter("APPROVED")
+                fetchArtisans("APPROVED")
+              }}
+            >
+              Approved
+            </button>
+            <button
+              className={`filter-btn ${artisanFilter === "REJECTED" ? "active" : ""}`}
+              onClick={() => {
+                setArtisanFilter("REJECTED")
+                fetchArtisans("REJECTED")
+              }}
+            >
+              Rejected
+            </button>
+          </div>
+
+          <div className="artisans-grid">
+            {artisans.length > 0 ? (
+              artisans.map((artisan) => (
+                <div key={artisan.id} className="artisan-card">
+                  <div className="artisan-card-header">
+                    <div className="artisan-avatar">
+                      {artisan.fullName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="artisan-info">
+                      <h3>{artisan.fullName}</h3>
+                      <span className={`status-badge ${artisan.status.toLowerCase()}`}>
+                        {artisan.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="artisan-details">
+                    <div className="detail-row">
+                      <span className="label">Email:</span>
+                      <span className="value">{artisan.email}</span>
+                    </div>
+                    {artisan.phone && (
+                      <div className="detail-row">
+                        <span className="label">Phone:</span>
+                        <span className="value">{artisan.phone}</span>
+                      </div>
+                    )}
+                    <div className="detail-row">
+                      <span className="label">Specialty:</span>
+                      <span className="value">{artisan.specialty}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="label">Region:</span>
+                      <span className="value">{artisan.region}</span>
+                    </div>
+                    {artisan.location && (
+                      <div className="detail-row">
+                        <span className="label">Location:</span>
+                        <span className="value">{artisan.location}</span>
+                      </div>
+                    )}
+                    <div className="detail-row">
+                      <span className="label">Experience:</span>
+                      <span className="value">
+                        {artisan.yearsExperience ? `${artisan.yearsExperience} years` : "Not specified"}
+                      </span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="label">Applied:</span>
+                      <span className="value">
+                        {new Date(artisan.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="label">Products:</span>
+                      <span className="value">{artisan._count.artListings}</span>
+                    </div>
+                    {artisan.approvedAt && (
+                      <div className="detail-row">
+                        <span className="label">Approved:</span>
+                        <span className="value">
+                          {new Date(artisan.approvedAt).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {artisan.shopBio && (
+                    <div className="artisan-bio">
+                      <h4>About:</h4>
+                      <p>{artisan.shopBio}</p>
+                    </div>
+                  )}
+
+                  {artisan.status === "PENDING" && (
+                    <div className="artisan-actions">
+                      <button
+                        className="button approve-button"
+                        onClick={() => handleApproveArtisan(artisan.id)}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        className="button reject-button"
+                        onClick={() => {
+                          const reason = prompt("Enter rejection reason (optional):")
+                          if (reason !== null) {
+                            handleRejectArtisan(artisan.id, reason || "Your registration was not approved.")
+                          }
+                        }}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  )}
+
+                  {artisan.status === "REJECTED" && artisan.rejectionReason && (
+                    <div className="rejection-reason">
+                      <h4>Rejection Reason:</h4>
+                      <p>{artisan.rejectionReason}</p>
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="empty-state" style={{ gridColumn: "1 / -1", textAlign: "center", padding: "40px" }}>
+                <p>No {artisanFilter.toLowerCase()} artisan registrations</p>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "lib/prisma"
+import { sendArtisanRegistrationReceivedEmail } from "lib/email-service"
+import { artisanNotifications } from "lib/notification-service"
 
 // Artisan registration
 export async function POST(request: Request) {
@@ -57,6 +59,17 @@ export async function POST(request: Request) {
         status: "PENDING",
       },
     })
+
+    // Send confirmation email (non-blocking)
+    sendArtisanRegistrationReceivedEmail(email, {
+      fullName,
+      specialty,
+      region,
+    }).catch((err) => console.error("Failed to send registration email:", err))
+
+    // Create in-app notification (non-blocking)
+    artisanNotifications.registrationReceived(artisan.id, fullName, specialty, region)
+      .catch((err) => console.error("Failed to create notification:", err))
 
     return NextResponse.json(
       {

@@ -1,4 +1,4 @@
-// This is your Prisma schema file,
+pr// This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -142,6 +142,18 @@ model Artisan {
   approvedAt      DateTime?
   approvedBy      String?
   
+  // Account Linking Verification
+  verificationToken     String?
+  verificationExpiry    DateTime?
+  
+  // Verification
+  isVerified      Boolean  @default(false)
+  // Approval
+  status          ArtisanStatus @default(PENDING)
+  rejectionReason String?
+  approvedAt      DateTime?
+  approvedBy      String?
+  
   // Verification
   isVerified      Boolean  @default(false)
   
@@ -151,4 +163,144 @@ model Artisan {
   // Timestamps
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+// Cart Model
+model Cart {
+  id        String   @id @default(cuid())
+  userId    String   @unique  // One cart per user
+  items     CartItem[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Cart Item Model
+model CartItem {
+  id           String   @id @default(cuid())
+  cartId       String
+  cart         Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  artListingId String
+  quantity     Int      @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([cartId, artListingId])
+}
+
+// Order Status Enum
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+// Payment Status Enum
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// Shipment Status Enum
+enum ShipmentStatus {
+  PENDING
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  RETURNED
+  FAILED
+}
+
+// Order Model
+model Order {
+  id               String         @id @default(cuid())
+  orderNumber      String         @unique
+  userId           String
+  status           OrderStatus    @default(PENDING)
+  subtotal         Float
+  shippingCost     Float          @default(0)
+  tax              Float          @default(0)
+  total            Float
+  paymentMethod    String?
+  paymentStatus    PaymentStatus  @default(PENDING)
+  stripePaymentIntentId String?
+  mpesaTransactionId   String?
+  notes            String?
+  items            OrderItem[]
+  shipment         Shipment?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+// Order Item Model
+model OrderItem {
+  id           String   @id @default(cuid())
+  orderId      String
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  artListingId String
+  title        String
+  price        Float
+  quantity     Int
+  createdAt    DateTime @default(now())
+}
+
+// Shipment Model
+model Shipment {
+  id                 String         @id @default(cuid())
+  orderId            String         @unique
+  order              Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  trackingNumber     String?
+  carrier            String?
+  shippingMethod     String?
+  estimatedDelivery  DateTime?
+  shippedAt          DateTime?
+  deliveredAt        DateTime?
+  status             ShipmentStatus @default(PENDING)
+  location           String?
+  notes              String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+}
+
+// Wishlist Model
+model Wishlist {
+  id     String        @id @default(cuid())
+  userId String        @unique
+  items  WishlistItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+// Wishlist Item Model
+model WishlistItem {
+  id           String   @id @default(cuid())
+  wishlistId   String
+  wishlist     Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  artListingId String
+  createdAt    DateTime @default(now())
+
+  @@unique([wishlistId, artListingId])
+}
+
+// Notification Model
+model Notification {
+  id         String   @id @default(cuid())
+  userId     String?
+  orderId    String?
+  type       String
+  title      String
+  message    String
+  isRead     Boolean  @default(false)
+  emailSent  Boolean  @default(false)
+  emailSentAt DateTime?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
