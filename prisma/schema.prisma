@@ -1,4 +1,4 @@
-pr// This is your Prisma schema file,
+// This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -145,14 +145,6 @@ model Artisan {
   // Account Linking Verification
   verificationToken     String?
   verificationExpiry    DateTime?
-  
-  // Verification
-  isVerified      Boolean  @default(false)
-  // Approval
-  status          ArtisanStatus @default(PENDING)
-  rejectionReason String?
-  approvedAt      DateTime?
-  approvedBy      String?
   
   // Verification
   isVerified      Boolean  @default(false)

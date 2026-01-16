@@ -3,6 +3,7 @@
   min-height: 100vh;
   background: linear-gradient(135deg, #faf8f5 0%, #f5f0e8 100%);
   padding: 40px 20px;
+  color: #1a1a1a;
 }
 
 .register-container {
@@ -91,7 +92,7 @@
 .form-group label {
   display: block;
   font-weight: 600;
-  color: #333;
+  color: #333333;
   margin-bottom: 8px;
   font-size: 0.95rem;
 }
@@ -106,6 +107,7 @@
   font-size: 1rem;
   transition: all 0.2s ease;
   background: #fafafa;
+  color: #1a1a1a;
 }
 
 .form-group input:focus,
@@ -155,7 +157,7 @@
 
 .terms-checkbox label {
   font-size: 0.9rem;
-  color: #666;
+  color: #666666;
   line-height: 1.5;
 }
 
@@ -228,7 +230,7 @@
 
 .register-footer p {
   margin: 8px 0;
-  color: #666;
+  color: #666666;
   font-size: 0.95rem;
 }
 

@@ -44,6 +44,10 @@ export async function POST(request: Request) {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "")
 
+// Generate verification token for account linking
+    const verificationToken = crypto.randomUUID()
+    const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+
     // Create artisan with PENDING status
     const artisan = await prisma.artisan.create({
       data: {
@@ -57,6 +61,8 @@ export async function POST(request: Request) {
         shopBio: bio,
         shopSlug: `${baseSlug}-${Date.now()}`, // Ensure uniqueness
         status: "PENDING",
+        verificationToken,
+        verificationExpiry,
       },
     })
 
