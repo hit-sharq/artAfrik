@@ -5,13 +5,14 @@ import { auth } from "@clerk/nextjs/server"
 // GET - Fetch current artisan's settings
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth()
+    const { userId, sessionClaims } = await auth()
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const artisan = await prisma.artisan.findFirst({
+    // First try by clerkId
+    let artisan = await prisma.artisan.findFirst({
       where: { clerkId: userId },
       select: {
         id: true,
@@ -26,6 +27,39 @@ export async function GET(request: NextRequest) {
         createdAt: true,
       },
     })
+
+    // If not found, try by email and link clerkId
+    if (!artisan) {
+      const email = sessionClaims?.email as string | undefined
+      const primaryEmail = sessionClaims?.primary_email as string | undefined
+      const artisanEmail = email || primaryEmail
+
+      if (artisanEmail) {
+        artisan = await prisma.artisan.findFirst({
+          where: { email: artisanEmail.toLowerCase() },
+          select: {
+            id: true,
+            email: true,
+            fullName: true,
+            phone: true,
+            specialty: true,
+            region: true,
+            location: true,
+            yearsExperience: true,
+            status: true,
+            createdAt: true,
+          },
+        })
+
+        if (artisan) {
+          // Link clerkId
+          await prisma.artisan.updateMany({
+            where: { email: artisanEmail.toLowerCase() },
+            data: { clerkId: userId },
+          })
+        }
+      }
+    }
 
     if (!artisan) {
       return NextResponse.json({ error: "Artisan not found" }, { status: 404 })
@@ -44,15 +78,37 @@ export async function GET(request: NextRequest) {
 // PUT - Update current artisan's profile
 export async function PUT(request: NextRequest) {
   try {
-    const { userId } = await auth()
+    const { userId, sessionClaims } = await auth()
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const artisan = await prisma.artisan.findFirst({
+    // First try by clerkId
+    let artisan = await prisma.artisan.findFirst({
       where: { clerkId: userId },
     })
+
+    // If not found, try by email and link clerkId
+    if (!artisan) {
+      const email = sessionClaims?.email as string | undefined
+      const primaryEmail = sessionClaims?.primary_email as string | undefined
+      const artisanEmail = email || primaryEmail
+
+      if (artisanEmail) {
+        artisan = await prisma.artisan.findFirst({
+          where: { email: artisanEmail.toLowerCase() },
+        })
+
+        if (artisan) {
+          // Link clerkId
+          await prisma.artisan.updateMany({
+            where: { email: artisanEmail.toLowerCase() },
+            data: { clerkId: userId },
+          })
+        }
+      }
+    }
 
     if (!artisan) {
       return NextResponse.json({ error: "Artisan not found" }, { status: 404 })

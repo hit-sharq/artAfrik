@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { cloudinaryLoader } from "@/lib/cloudinary"
 import MainLayout from "@/components/MainLayout"
+import { useAuth } from "@clerk/nextjs"
 import "./register.css"
 
 const SPECIALTIES = [
@@ -36,7 +37,8 @@ const REGIONS = [
 
 export default function ArtisanRegisterPage() {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
+  const { isSignedIn, isLoaded: authLoaded } = useAuth()
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
 
   const [formData, setFormData] = useState({
@@ -50,6 +52,43 @@ export default function ArtisanRegisterPage() {
     bio: "",
     agreeTerms: false,
   })
+
+  // Check authentication and artisan status on load
+  useEffect(() => {
+    if (!authLoaded) return
+
+    if (!isSignedIn) {
+      router.push("/sign-in?redirect=/artisan/register")
+      return
+    }
+
+    // Check if user is already an approved artisan
+    checkArtisanStatus()
+  }, [authLoaded, isSignedIn, router])
+
+  const checkArtisanStatus = async () => {
+    try {
+      const response = await fetch("/api/artisans/me")
+      
+      if (response.ok) {
+        // User is an approved artisan - redirect to dashboard
+        router.push("/artisan/dashboard")
+        return
+      }
+      
+      if (response.status === 403) {
+        const data = await response.json()
+        setError(data.error)
+        return
+      }
+      
+      // 404 means not registered yet, show the form
+      setIsLoading(false)
+    } catch (err) {
+      console.error("Error checking artisan status:", err)
+      setIsLoading(false)
+    }
+  }
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -89,6 +128,41 @@ export default function ArtisanRegisterPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Show loading while checking auth and artisan status
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="artisan-register-page">
+          <div className="register-container">
+            <div className="register-header">
+              <h1>Become an Artisan</h1>
+              <p>Loading...</p>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
+
+  // Show error state if artisan is pending or rejected
+  if (error) {
+    return (
+      <MainLayout>
+        <div className="artisan-register-page">
+          <div className="register-container">
+            <div className="register-header">
+              <h1>Become an Artisan</h1>
+              <div className="error-message">{error}</div>
+              <Link href="/" className="back-button">
+                ← Back to Home
+              </Link>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    )
   }
 
   return (

@@ -123,8 +123,8 @@ const Header = () => {
               </SignedIn>
               <SignedOut>
                 <li className={`artisan-link ${isActive("/artisan/register")}`}>
-                  <Link 
-                    href="/artisan/register" 
+                  <Link
+                    href="/artisan/register"
                     onClick={() => setMobileMenuOpen(false)}
                     style={{ color: '#e67e22', fontWeight: 600 }}
                   >
@@ -162,25 +162,13 @@ const Header = () => {
 
                   {/* Artisan Links - For approved artisans */}
                   {isArtisan && artisanData?.status === "APPROVED" && (
-                    <>
-                      <Link
-                        href="/artisan/dashboard"
-                        className={`dashboard-link artisan-dashboard-link ${isActive("/artisan/dashboard")}`}
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        🎨 Dashboard
-                      </Link>
-                      {artisanData.shopSlug && (
-                        <Link
-                          href={`/shop/${artisanData.shopSlug}`}
-                          className={`dashboard-link artisan-shop-link`}
-                          onClick={() => setMobileMenuOpen(false)}
-                          target="_blank"
-                        >
-                          🏪 My Shop
-                        </Link>
-                      )}
-                    </>
+                    <Link
+                      href="/artisan/dashboard"
+                      className={`dashboard-link artisan-dashboard-link ${isActive("/artisan/dashboard")}`}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      🏪 Shop
+                    </Link>
                   )}
 
                   {/* User Account Button */}
