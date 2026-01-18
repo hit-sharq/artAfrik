@@ -1,4 +1,4 @@
-// Shipping Configuration for ArtAfrik
+// Shipping Configuration for ArtAfrik - All prices in USD
 // Based on research from shipping-fees-kenya.md
 
 export type ShippingZone = 
@@ -8,7 +8,7 @@ export type ShippingZone =
   | 'zone_d' // Europe
   | 'zone_e' // Americas
   | 'zone_f' // Oceania
-  | 'local'; // Kenya (domestic)
+  | 'local'; // Kenya (domestic) - Now in USD
 
 export interface ShippingRate {
   baseRate: number;
@@ -25,12 +25,12 @@ export interface CountryMapping {
   zone: ShippingZone;
 }
 
-// Shipping Zones Configuration
+// Shipping Zones Configuration - All USD
 export const SHIPPING_ZONES: Record<ShippingZone, ShippingRate> = {
   local: {
-    baseRate: 5,
-    ratePerKg: 2,
-    currency: 'KES',
+    baseRate: 10,
+    ratePerKg: 3,
+    currency: 'USD',
     estimatedDaysMin: 1,
     estimatedDaysMax: 3,
     courier: 'Local Courier',
@@ -133,12 +133,12 @@ export function getZoneInfo(zone: ShippingZone) {
 }
 
 export const FREE_SHIPPING_THRESHOLDS: Record<ShippingZone, number> = {
-  local: 5000,
-  zone_a: 15000,
-  zone_b: 20000,
-  zone_c: 25000,
-  zone_d: 30000,
-  zone_e: 35000,
-  zone_f: 35000,
+  local: 100,
+  zone_a: 150,
+  zone_b: 200,
+  zone_c: 250,
+  zone_d: 300,
+  zone_e: 350,
+  zone_f: 350,
 };
 

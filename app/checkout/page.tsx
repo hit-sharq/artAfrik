@@ -26,8 +26,7 @@ interface ShippingOption {
   courier: string;
   service: string;
   estimatedDays: { min: number; max: number };
-  priceUSD: number;
-  priceKES: number;
+  price: number;
   currency: string;
   isAvailable: boolean;
   features: string[];
@@ -453,7 +452,7 @@ export default function CheckoutPage() {
       const data = await response.json();
 
       if (data.success && data.data?.options) {
-        // Transform options to our format
+        // Transform options to our format (all USD)
         const options: ShippingOption[] = data.data.options.map((opt: any, index: number) => ({
           id: opt.courier?.toLowerCase().replace(/\s+/g, '-') || `option-${index}`,
           courier: opt.courier || 'ArtAfrik Shipping',
@@ -462,9 +461,8 @@ export default function CheckoutPage() {
             min: parseInt(opt.estimatedDays?.split('-')[0]) || 5,
             max: parseInt(opt.estimatedDays?.split('-')[1]) || 10,
           },
-          priceUSD: opt.totalUSD || 0,
-          priceKES: opt.totalKES || 0,
-          currency: opt.currency || 'USD',
+          price: opt.totalUSD || 0,
+          currency: 'USD',
           isAvailable: true,
           features: ['Tracking included', 'Insurance included'],
         }));
@@ -489,10 +487,10 @@ export default function CheckoutPage() {
     }
   }, [shippingInfo.countryCode, subtotal]);
 
-  // Get current shipping cost
+  // Get current shipping cost (USD only)
   const shippingCost = selectedShipping 
-    ? (selectedShipping.currency === 'USD' ? selectedShipping.priceUSD : selectedShipping.priceKES)
-    : (subtotal > 500 ? 0 : 25);
+    ? selectedShipping.price
+    : (subtotal > 100 ? 0 : 15);
   
   const tax = subtotal * 0.08;
   const total = subtotal + shippingCost + tax;
@@ -673,10 +671,7 @@ export default function CheckoutPage() {
                         <div className="option-header">
                           <span className="option-courier">{option.courier}</span>
                           <span className="option-price">
-                            {option.currency === 'USD' 
-                              ? (option.priceUSD === 0 ? 'FREE' : `$${option.priceUSD.toFixed(2)}`)
-                              : (option.priceKES === 0 ? 'FREE' : `KES ${option.priceKES.toLocaleString()}`)
-                            }
+                            {option.price === 0 ? 'FREE' : `$${option.price.toFixed(2)}`}
                           </span>
                         </div>
                         <div className="option-meta">

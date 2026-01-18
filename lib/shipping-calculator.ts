@@ -1,4 +1,5 @@
 // Shipping Calculator Utility for ArtAfrik
+// All prices in USD
 import { 
   ShippingZone, 
   SHIPPING_ZONES, 
@@ -6,8 +7,6 @@ import {
   getZoneInfo,
   FREE_SHIPPING_THRESHOLDS 
 } from './shipping-config';
-
-const USD_TO_KES = 150;
 
 export interface ShippingCalculationParams {
   weight: number;
@@ -59,39 +58,34 @@ export function calculateShipping(
   const baseWeight = 0.5;
   const additionalWeight = Math.max(0, weight - baseWeight);
   
-  let baseRate = zoneInfo.baseRate;
-  let weightCharge = additionalWeight * zoneInfo.ratePerKg;
+  const baseRate = zoneInfo.baseRate;
+  const weightCharge = additionalWeight * zoneInfo.ratePerKg;
   
+  // All calculations in USD
   let totalUSD = baseRate + weightCharge;
-  let totalKES = zone === 'local' ? totalUSD : totalUSD * USD_TO_KES;
   
-  const fuelSurchargeRate = 0.20;
-  const fuelSurcharge = zone === 'local' 
-    ? totalUSD * fuelSurchargeRate 
-    : totalUSD * USD_TO_KES * fuelSurchargeRate;
+  // Fuel surcharge (20% for all zones)
+  const fuelSurcharge = totalUSD * 0.20;
   
-  const insuranceRate = 0.01;
-  const insuranceMin = zone === 'local' ? 50 : 5 * USD_TO_KES;
-  const insurance = Math.max(insuranceMin, subtotal * insuranceRate);
+  // Insurance (1% with minimum based on zone)
+  const insuranceMin = zone === 'local' ? 5 : 10;
+  const insurance = Math.max(insuranceMin, subtotal * 0.01);
   
-  const subtotalWithExtras = zone === 'local' 
-    ? totalUSD + fuelSurcharge + insurance
-    : (totalUSD * USD_TO_KES) + fuelSurcharge + insurance;
+  const subtotalWithExtras = totalUSD + fuelSurcharge + insurance;
   
-  totalKES = isFreeShipping ? 0 : subtotalWithExtras;
-  totalUSD = isFreeShipping ? 0 : totalKES / USD_TO_KES;
+  totalUSD = isFreeShipping ? 0 : subtotalWithExtras;
   
   const savings = isFreeShipping ? subtotalWithExtras : 0;
   
   return {
     zone,
-    baseRate: zone === 'local' ? baseRate : baseRate * USD_TO_KES,
-    weightCharge: zone === 'local' ? weightCharge : weightCharge * USD_TO_KES,
+    baseRate,
+    weightCharge,
     fuelSurcharge,
     insurance,
     totalUSD: Math.round(totalUSD * 100) / 100,
-    totalKES: Math.round(totalKES),
-    currency: zone === 'local' ? 'KES' : 'USD',
+    totalKES: 0, // Not used anymore
+    currency: 'USD',
     estimatedDays: `${zoneInfo.estimatedDaysMin}-${zoneInfo.estimatedDaysMax} days`,
     courier: zoneInfo.courier,
     isFreeShipping,
@@ -108,6 +102,7 @@ export function getShippingOptions(
   
   const options: ShippingCalculationResult[] = [];
   
+  // Economy option (for international)
   if (zone !== 'local') {
     const economyResult = calculateShipping({
       weight: 1,
@@ -120,16 +115,17 @@ export function getShippingOptions(
       courier: 'EMS (Economy)',
       estimatedDays: `${zoneInfo.estimatedDaysMax + 3}-${zoneInfo.estimatedDaysMax + 7} days`,
       totalUSD: Math.round((economyResult.totalUSD * 0.8) * 100) / 100,
-      totalKES: Math.round(economyResult.totalKES * 0.8),
     });
   }
   
+  // Standard option
   options.push(calculateShipping({
     weight: 1,
     countryCode,
     subtotal,
   }));
   
+  // Express option (for international)
   if (zone !== 'local') {
     const expressResult = calculateShipping({
       weight: 1,
@@ -142,7 +138,6 @@ export function getShippingOptions(
       courier: 'DHL Express (Priority)',
       estimatedDays: `${Math.max(1, zoneInfo.estimatedDaysMin - 1)}-${Math.max(2, zoneInfo.estimatedDaysMax - 2)} days`,
       totalUSD: Math.round((expressResult.totalUSD * 1.5) * 100) / 100,
-      totalKES: Math.round(expressResult.totalKES * 1.5),
     });
   }
   
@@ -154,12 +149,7 @@ export function formatShippingCost(result: ShippingCalculationResult): string {
     return 'FREE';
   }
   
-  const currency = result.currency === 'USD' ? '$' : 'KES ';
-  const amount = result.currency === 'USD' 
-    ? result.totalUSD.toFixed(2) 
-    : result.totalKES.toLocaleString();
-    
-  return `${currency}${amount}`;
+  return `$${result.totalUSD.toFixed(2)}`;
 }
 
 export function getShippingInfo(countryCode: string) {
@@ -171,6 +161,7 @@ export function getShippingInfo(countryCode: string) {
     courier: zoneInfo.courier,
     estimatedDelivery: `${zoneInfo.estimatedDaysMin}-${zoneInfo.estimatedDaysMax} business days`,
     freeShippingThreshold: FREE_SHIPPING_THRESHOLDS[zone],
+    currency: 'USD',
   };
 }
 
@@ -178,4 +169,5 @@ export function isValidShippingDestination(countryCode: string): boolean {
   const zone = getShippingZone(countryCode);
   return zone !== undefined;
 }
+
 
