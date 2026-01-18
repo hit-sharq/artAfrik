@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server"
 import { prisma } from "lib/prisma"
+import { auth } from "@clerk/nextjs/server"
 import { sendArtisanRegistrationReceivedEmail } from "lib/email-service"
 import { artisanNotifications } from "lib/notification-service"
 
 // Artisan registration
 export async function POST(request: Request) {
   try {
+    // Get Clerk user ID from authentication
+    const { userId: clerkId } = await auth()
+
     const body = await request.json()
     const {
       email,
@@ -52,6 +56,7 @@ export async function POST(request: Request) {
     const artisan = await prisma.artisan.create({
       data: {
         email,
+        clerkId, // Store the Clerk user ID
         fullName,
         phone,
         specialty,
