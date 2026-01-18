@@ -45,6 +45,7 @@ model ArtListing {
   updatedAt DateTime @updatedAt
 
   orderRequests OrderRequest[]
+  cartItems     CartItem[]
 }
 
 model OrderRequest {
@@ -172,6 +173,7 @@ model CartItem {
   cartId       String
   cart         Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
   artListingId String
+  artListing   ArtListing @relation(fields: [artListingId], references: [id])
   quantity     Int      @default(1)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -225,11 +227,20 @@ model Order {
   stripePaymentIntentId String?
   mpesaTransactionId    String?
   notes                 String?
-  items                 OrderItem[]
-  shipment              Shipment?     @relation(fields: [shipmentId], references: [id])
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-  shipmentId            String?
+  
+  // Shipping Address
+  shippingName        String?
+  shippingEmail       String?
+  shippingPhone       String?
+  shippingAddress     String?
+  shippingCity        String?
+  shippingCountry     String?
+  
+  items               OrderItem[]
+  shipment            Shipment?     @relation(fields: [shipmentId], references: [id])
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  shipmentId          String?
 }
 
 // Order Item Model
@@ -366,3 +377,4 @@ model Notification {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
+

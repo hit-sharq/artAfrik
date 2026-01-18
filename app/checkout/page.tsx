@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Lock, Check, Loader2, Smartphone, Building } from 'lucide-react';
+import { ArrowLeft, CreditCard, Lock, Check, Loader2, Smartphone, Building, Truck, Clock } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -20,6 +20,19 @@ const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 // Payment method types
 type PaymentMethod = 'stripe' | 'mpesa' | 'pesapal';
 
+// Shipping option type
+interface ShippingOption {
+  id: string;
+  courier: string;
+  service: string;
+  estimatedDays: { min: number; max: number };
+  priceUSD: number;
+  priceKES: number;
+  currency: string;
+  isAvailable: boolean;
+  features: string[];
+}
+
 interface ShippingInfo {
   name: string;
   email: string;
@@ -27,6 +40,7 @@ interface ShippingInfo {
   address: string;
   city: string;
   country: string;
+  countryCode: string;
 }
 
 // Stripe Checkout Form
@@ -398,9 +412,12 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { items, subtotal, clearCart } = useCart();
   const [isLoading, setIsLoading] = useState(true);
+  const [isCalculatingShipping, setIsCalculatingShipping] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('stripe');
+  const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
+  const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     name: '',
     email: '',
@@ -408,9 +425,75 @@ export default function CheckoutPage() {
     address: '',
     city: '',
     country: '',
+    countryCode: 'US', // Default to US
   });
 
-  const shippingCost = subtotal > 500 ? 0 : 25;
+  // Fetch shipping options when country changes
+  const fetchShippingOptions = async (countryCode: string) => {
+    if (!countryCode) return;
+
+    setIsCalculatingShipping(true);
+    try {
+      // Transform cart items to the expected format
+      const cartItems = items.map(item => ({
+        id: item.id,
+        quantity: item.quantity,
+        price: item.artListing?.price || 0,
+      }));
+
+      const response = await fetch('/api/shipping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          countryCode,
+          items: cartItems,
+          subtotal,
+        }),
+      });
+      const data = await response.json();
+
+      if (data.success && data.data?.options) {
+        // Transform options to our format
+        const options: ShippingOption[] = data.data.options.map((opt: any, index: number) => ({
+          id: opt.courier?.toLowerCase().replace(/\s+/g, '-') || `option-${index}`,
+          courier: opt.courier || 'ArtAfrik Shipping',
+          service: opt.service || 'standard',
+          estimatedDays: {
+            min: parseInt(opt.estimatedDays?.split('-')[0]) || 5,
+            max: parseInt(opt.estimatedDays?.split('-')[1]) || 10,
+          },
+          priceUSD: opt.totalUSD || 0,
+          priceKES: opt.totalKES || 0,
+          currency: opt.currency || 'USD',
+          isAvailable: true,
+          features: ['Tracking included', 'Insurance included'],
+        }));
+
+        setShippingOptions(options);
+        // Select the first available option by default
+        if (options.length > 0 && !selectedShipping) {
+          setSelectedShipping(options[1] || options[0]); // Prefer standard (index 1)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching shipping options:', error);
+    } finally {
+      setIsCalculatingShipping(false);
+    }
+  };
+
+  // Calculate shipping when country changes
+  useEffect(() => {
+    if (shippingInfo.countryCode) {
+      fetchShippingOptions(shippingInfo.countryCode);
+    }
+  }, [shippingInfo.countryCode, subtotal]);
+
+  // Get current shipping cost
+  const shippingCost = selectedShipping 
+    ? (selectedShipping.currency === 'USD' ? selectedShipping.priceUSD : selectedShipping.priceKES)
+    : (subtotal > 500 ? 0 : 25);
+  
   const tax = subtotal * 0.08;
   const total = subtotal + shippingCost + tax;
 
@@ -421,16 +504,29 @@ export default function CheckoutPage() {
 
   const initializePayment = async () => {
     try {
-      const endpoint = paymentMethod === 'mpesa' ? '/api/payments/mpesa' 
-        : paymentMethod === 'pesapal' ? '/api/payments/pesapal' 
+      const endpoint = paymentMethod === 'mpesa' ? '/api/payments/mpesa'
+        : paymentMethod === 'pesapal' ? '/api/payments/pesapal'
         : '/api/payments';
+
+      // Transform cart items for API
+      const cartItems = items.map(item => ({
+        artListingId: item.artListing?.id,
+        title: item.artListing?.title,
+        price: item.artListing?.price,
+        quantity: item.quantity,
+      }));
 
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cartId: 'local',
-          shippingInfo,
+          cartItems,
+          shippingInfo: {
+            ...shippingInfo,
+            shippingOption: selectedShipping,
+            shippingCost,
+          },
           phoneNumber: shippingInfo.phone,
           paymentMethod,
         }),
@@ -460,11 +556,25 @@ export default function CheckoutPage() {
       return;
     }
     initializePayment();
-  }, [items, router, paymentMethod]);
+  }, [items, router, paymentMethod, selectedShipping]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setShippingInfo((prev) => ({ ...prev, [name]: value }));
+    if (name === 'country') {
+      // Map country name to country code (simplified)
+      const countryCodes: Record<string, string> = {
+        'kenya': 'KE', 'nairobi': 'KE',
+        'united states': 'US', 'usa': 'US', 'america': 'US',
+        'united kingdom': 'GB', 'uk': 'GB', 'britain': 'GB',
+        'canada': 'CA', 'australia': 'AU', 'germany': 'DE',
+        'france': 'FR', 'south africa': 'ZA', 'nigeria': 'NG',
+        'uganda': 'UG', 'tanzania': 'TZ', 'rwanda': 'RW',
+      };
+      const code = countryCodes[value.toLowerCase()] || value.toUpperCase().slice(0, 2);
+      setShippingInfo((prev) => ({ ...prev, [name]: value, countryCode: code }));
+    } else {
+      setShippingInfo((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   if (items.length === 0) {
@@ -508,7 +618,7 @@ export default function CheckoutPage() {
           <div className="checkout-form-section">
             {/* Shipping Information */}
             <div className="form-section">
-              <h2>Shipping Information</h2>
+              <h2><Truck size={22} />Shipping Information</h2>
               <div className="form-grid">
                 <div className="form-group full-width">
                   <label htmlFor="name">Full Name</label>
@@ -535,6 +645,60 @@ export default function CheckoutPage() {
                   <input type="text" id="country" name="country" value={shippingInfo.country} onChange={handleInputChange} placeholder="United States" required />
                 </div>
               </div>
+            </div>
+
+            {/* Shipping Options */}
+            <div className="form-section">
+              <h2><Truck size={22} />Shipping Method</h2>
+              {isCalculatingShipping ? (
+                <div className="loading-shipping">
+                  <Loader2 size={24} className="spin" />
+                  <span>Calculating shipping options...</span>
+                </div>
+              ) : shippingOptions.length > 0 ? (
+                <div className="shipping-options">
+                  {shippingOptions.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={`shipping-option ${selectedShipping?.id === option.id ? 'selected' : ''}`}
+                      onClick={() => setSelectedShipping(option)}
+                    >
+                      <div className="option-radio">
+                        <div className="radio-circle">
+                          {selectedShipping?.id === option.id && <div className="radio-dot" />}
+                        </div>
+                      </div>
+                      <div className="option-details">
+                        <div className="option-header">
+                          <span className="option-courier">{option.courier}</span>
+                          <span className="option-price">
+                            {option.currency === 'USD' 
+                              ? (option.priceUSD === 0 ? 'FREE' : `$${option.priceUSD.toFixed(2)}`)
+                              : (option.priceKES === 0 ? 'FREE' : `KES ${option.priceKES.toLocaleString()}`)
+                            }
+                          </span>
+                        </div>
+                        <div className="option-meta">
+                          <span className="option-delivery">
+                            <Clock size={14} />
+                            {option.estimatedDays.min}-{option.estimatedDays.max} business days
+                          </span>
+                        </div>
+                        <div className="option-features">
+                          {option.features.map((feature, idx) => (
+                            <span key={idx} className="feature-tag">{feature}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="no-shipping">
+                  <p>Enter your country above to see available shipping options</p>
+                </div>
+              )}
             </div>
 
             {/* Payment Method Selection */}

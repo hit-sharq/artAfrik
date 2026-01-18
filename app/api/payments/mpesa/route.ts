@@ -1,26 +1,30 @@
 // M-Pesa Payment API Route
 // Implements M-Pesa STK Push for mobile payments
+// Paybill: 522533 | Account: 7771828 (KCB Bank)
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs';
 import { prisma } from '@/lib/prisma';
 
 // M-Pesa Configuration
+// Paybill: 522533 | Account: 7771828 (KCB Bank)
 const MPESA_ENV = process.env.MPESA_ENVIRONMENT || 'sandbox'; // 'sandbox' or 'live'
 const MPESA_BASE_URL = MPESA_ENV === 'live'
   ? 'https://api.safaricom.co.ke'
   : 'https://sandbox.safaricom.co.ke';
 
-const SHORTCODE = process.env.MPESA_SHORTCODE;
+// Paybill Configuration
+const SHORTCODE = process.env.MPESA_SHORTCODE || '522533'; // Default paybill from your requirement
+const ACCOUNT_NUMBER = process.env.MPESA_ACCOUNT_NUMBER || '7771828'; // Default account from your requirement
 const CONSUMER_KEY = process.env.MPESA_CONSUMER_KEY;
 const CONSUMER_SECRET = process.env.MPESA_CONSUMER_SECRET;
-const PASSKEY = process.env.MPESA_PASSKEY;
+const PASSKEY = process.env.MPESA_PASSKEY || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'; // Sandbox passkey
 
 // Generate M-Pesa access token
-async function getAccessToken(): Promise<string | null> {
+async function getAccessToken(): Promise<{ token: string | null; error?: string }> {
   try {
     if (!CONSUMER_KEY || !CONSUMER_SECRET) {
-      return null;
+      return { token: null, error: 'M-Pesa credentials not configured' };
     }
 
     const credentials = Buffer.from(`${CONSUMER_KEY}:${CONSUMER_SECRET}`).toString('base64');
@@ -31,16 +35,28 @@ async function getAccessToken(): Promise<string | null> {
       },
     });
 
-    if (!response.ok) {
-      console.error('Failed to get M-Pesa access token');
-      return null;
+    const responseText = await response.text();
+    
+    if (!responseText || responseText.trim() === '') {
+      return { token: null, error: 'Empty response from M-Pesa OAuth' };
     }
 
-    const data = await response.json();
-    return data.access_token;
-  } catch (error) {
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      return { token: null, error: 'Invalid JSON from M-Pesa OAuth' };
+    }
+
+    if (!response.ok) {
+      console.error('Failed to get M-Pesa access token:', data);
+      return { token: null, error: data.errorDescription || 'Failed to get access token' };
+    }
+
+    return { token: data.access_token };
+  } catch (error: any) {
     console.error('Error getting M-Pesa access token:', error);
-    return null;
+    return { token: null, error: error.message };
   }
 }
 
@@ -64,12 +80,92 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
-    const { cartId, shippingInfo, phoneNumber } = body;
-
-    if (!cartId || !phoneNumber) {
+    const bodyText = await req.text();
+    
+    if (!bodyText || bodyText.trim() === '') {
       return NextResponse.json(
-        { success: false, error: 'Cart ID and phone number are required' },
+        { success: false, error: 'Request body is empty' },
+        { status: 400 }
+      );
+    }
+
+    let body;
+    try {
+      body = JSON.parse(bodyText);
+    } catch {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
+
+    const { cartId, cartItems, shippingInfo, phoneNumber } = body;
+
+    if (!phoneNumber) {
+      return NextResponse.json(
+        { success: false, error: 'Phone number is required' },
+        { status: 400 }
+      );
+    }
+
+    // Support both local cart (cartItems array) and database cart (cartId)
+    let cartItemsData: any[] = [];
+    let subtotal = 0;
+
+    if (cartItems && Array.isArray(cartItems)) {
+      // Local cart - use provided cart items
+      cartItemsData = cartItems;
+      subtotal = cartItems.reduce((sum: number, item: any) => {
+        return sum + (item.price || 0) * item.quantity;
+      }, 0);
+    } else if (cartId && cartId !== 'local') {
+      // Database cart - fetch from database
+      const cart = await prisma.cart.findUnique({
+        where: { id: cartId },
+        include: {
+          items: {
+            include: {
+              artListing: true,
+            },
+          },
+        },
+      });
+
+      if (!cart || cart.userId !== userId) {
+        return NextResponse.json(
+          { success: false, error: 'Cart not found' },
+          { status: 404 }
+        );
+      }
+
+      if (cart.items.length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'Cart is empty' },
+          { status: 400 }
+        );
+      }
+
+      cartItemsData = cart.items.map(item => ({
+        artListingId: item.artListingId,
+        artListing: item.artListing,
+        quantity: item.quantity,
+        price: item.artListing.price,
+        title: item.artListing.title,
+      }));
+
+      subtotal = cart.items.reduce((sum, item) => {
+        return sum + (item.artListing.price || 0) * item.quantity;
+      }, 0);
+    } else {
+      return NextResponse.json(
+        { success: false, error: 'Valid cart items or cart ID is required' },
+        { status: 400 }
+      );
+    }
+
+    if (cartItemsData.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Cart is empty' },
         { status: 400 }
       );
     }
@@ -83,37 +179,6 @@ export async function POST(req: NextRequest) {
     } else if (!formattedPhone.startsWith('254')) {
       formattedPhone = '254' + formattedPhone;
     }
-
-    // Get user's cart
-    const cart = await prisma.cart.findUnique({
-      where: { id: cartId },
-      include: {
-        items: {
-          include: {
-            artListing: true,
-          },
-        },
-      },
-    });
-
-    if (!cart || cart.userId !== userId) {
-      return NextResponse.json(
-        { success: false, error: 'Cart not found' },
-        { status: 404 }
-      );
-    }
-
-    if (cart.items.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Cart is empty' },
-        { status: 400 }
-      );
-    }
-
-    // Calculate totals
-    const subtotal = cart.items.reduce((sum, item) => {
-      return sum + (item.artListing.price || 0) * item.quantity;
-    }, 0);
 
     const shippingCost = subtotal > 500 ? 0 : 25;
     const tax = subtotal * 0.08;
@@ -151,10 +216,10 @@ export async function POST(req: NextRequest) {
         paymentMethod: 'mpesa',
         notes: body.notes,
         items: {
-          create: cart.items.map((item) => ({
-            artListingId: item.artListingId,
-            title: item.artListing.title,
-            price: item.artListing.price,
+          create: cartItemsData.map((item: any) => ({
+            artListingId: item.artListingId || item.id,
+            title: item.title || item.artListing?.title,
+            price: item.price || item.artListing?.price,
             quantity: item.quantity,
           })),
         },
@@ -164,17 +229,20 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Check if M-Pesa is configured
-    const accessToken = await getAccessToken();
+// Check if M-Pesa is configured
+    const { token, error: tokenError } = await getAccessToken();
 
-    if (!accessToken) {
+    if (!token) {
       // Development mode - simulate STK push
-      console.log('⚠️ M-Pesa not configured. Running in simulation mode.');
+      console.log('⚠️ M-Pesa not fully configured. Running in simulation mode.');
+      console.log('Paybill:', SHORTCODE, 'Account:', ACCOUNT_NUMBER);
 
-      // Clear cart
-      await prisma.cartItem.deleteMany({
-        where: { cartId: cart.id },
-      });
+      // Clear cart (only if using database cart)
+      if (cartId && cartId !== 'local') {
+        await prisma.cartItem.deleteMany({
+          where: { cartId },
+        });
+      }
 
       return NextResponse.json({
         success: true,
@@ -183,11 +251,16 @@ export async function POST(req: NextRequest) {
           orderNumber: order.orderNumber,
           paymentMethod: 'mpesa',
           isDevelopment: true,
-          message: 'M-Pesa STK push simulated. In production, you would receive an SMS.',
+          paybillInfo: {
+            paybill: SHORTCODE,
+            account: ACCOUNT_NUMBER,
+            bank: 'KCB',
+          },
+          message: `STK push simulated. In production, payment would be sent to Paybill ${SHORTCODE} Account ${ACCOUNT_NUMBER} (KCB Bank).`,
           simulation: {
             phoneNumber: formattedPhone,
             amount: total,
-            message: `STK push sent to ${formattedPhone} for KES ${total}`,
+            message: `Would send STK push to ${formattedPhone} for KES ${total}`,
           },
         },
       });
@@ -207,26 +280,38 @@ export async function POST(req: NextRequest) {
       PartyB: SHORTCODE,
       PhoneNumber: formattedPhone,
       CallBackURL: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/payments/mpesa/callback`,
-      AccountReference: orderNumber,
-      TransactionDesc: `ArtAfrik Order ${orderNumber}`,
+      AccountReference: ACCOUNT_NUMBER, // Using the configured account number
+      TransactionDesc: `ArtAfrik Order ${orderNumber} - Paybill ${SHORTCODE}`,
     };
+
+    console.log('Sending STK Push to:', formattedPhone);
+    console.log('Paybill:', SHORTCODE, 'Account:', ACCOUNT_NUMBER);
 
     const response = await fetch(`${MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(stkPushRequest),
     });
 
-    const responseData = await response.json();
+    const responseText = await response.text();
+    
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = { ResponseDescription: responseText || 'Unknown error' };
+    }
 
     if (response.ok && responseData.ResponseCode === '0') {
-      // Clear cart
-      await prisma.cartItem.deleteMany({
-        where: { cartId: cart.id },
-      });
+      // Clear cart (only if using database cart)
+      if (cartId && cartId !== 'local') {
+        await prisma.cartItem.deleteMany({
+          where: { cartId },
+        });
+      }
 
       return NextResponse.json({
         success: true,
@@ -237,6 +322,11 @@ export async function POST(req: NextRequest) {
           checkoutRequestId: responseData.CheckoutRequestID,
           merchantRequestId: responseData.MerchantRequestID,
           message: 'STK push sent successfully. Please check your phone.',
+          paybillInfo: {
+            paybill: SHORTCODE,
+            account: ACCOUNT_NUMBER,
+            bank: 'KCB',
+          },
         },
       });
     } else {
@@ -248,10 +338,10 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending M-Pesa STK push:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to initiate payment' },
+      { success: false, error: 'Failed to initiate payment: ' + error.message },
       { status: 500 }
     );
   }

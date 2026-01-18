@@ -25,60 +25,80 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { cartId, shippingInfo, notes } = await req.json();
+    const { cartId, cartItems, shippingInfo, notes } = await req.json();
 
-    if (!cartId) {
+    // Support both local cart (cartItems array) and database cart (cartId)
+    let cartItemsData: any[] = [];
+    let subtotal = 0;
+
+    if (cartItems && Array.isArray(cartItems)) {
+      // Local cart - use provided cart items
+      cartItemsData = cartItems;
+      subtotal = cartItems.reduce((sum: number, item: any) => {
+        return sum + (item.price || 0) * item.quantity;
+      }, 0);
+    } else if (cartId && cartId !== 'local') {
+      // Database cart - fetch from database
+      const cart = await prisma.cart.findUnique({
+        where: { id: cartId },
+        include: {
+          items: {
+            include: {
+              artListing: true,
+            },
+          },
+        },
+      });
+
+      if (!cart || cart.userId !== userId) {
+        return NextResponse.json(
+          { success: false, error: 'Cart not found' },
+          { status: 404 }
+        );
+      }
+
+      if (cart.items.length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'Cart is empty' },
+          { status: 400 }
+        );
+      }
+
+      cartItemsData = cart.items.map(item => ({
+        artListingId: item.artListingId,
+        artListing: item.artListing,
+        quantity: item.quantity,
+        price: item.artListing.price,
+        title: item.artListing.title,
+      }));
+
+      subtotal = cart.items.reduce((sum: number, item: any) => {
+        return sum + (item.artListing.price || 0) * item.quantity;
+      }, 0);
+    } else {
       return NextResponse.json(
-        { success: false, error: 'Cart ID is required' },
+        { success: false, error: 'Valid cart items or cart ID is required' },
         { status: 400 }
       );
     }
 
-    // Get user's cart
-    const cart = await prisma.cart.findUnique({
-      where: { id: cartId },
-      include: {
-        items: {
-          include: {
-            artListing: true,
-          },
-        },
-      },
-    });
-
-    if (!cart || cart.userId !== userId) {
-      return NextResponse.json(
-        { success: false, error: 'Cart not found' },
-        { status: 404 }
-      );
-    }
-
-    if (cart.items.length === 0) {
+    if (cartItemsData.length === 0) {
       return NextResponse.json(
         { success: false, error: 'Cart is empty' },
         { status: 400 }
       );
     }
 
-    // Calculate totals
-    const subtotal = cart.items.reduce((sum, item) => {
-      return sum + (item.artListing.price || 0) * item.quantity;
-    }, 0);
-
     const shippingCost = subtotal > 500 ? 0 : 25;
     const tax = subtotal * 0.08;
     const total = subtotal + shippingCost + tax;
 
-    // Get or create user
-    let user = await prisma.user.findUnique({
+    // Get or create user using upsert to prevent race conditions
+    let user = await prisma.user.upsert({
       where: { clerkId: userId },
+      update: {},
+      create: { clerkId: userId },
     });
-
-    if (!user) {
-      user = await prisma.user.create({
-        data: { clerkId: userId },
-      });
-    }
 
     // Generate order number
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
@@ -101,10 +121,10 @@ export async function POST(req: NextRequest) {
         paymentMethod: 'stripe',
         notes,
         items: {
-          create: cart.items.map((item) => ({
-            artListingId: item.artListingId,
-            title: item.artListing.title,
-            price: item.artListing.price,
+          create: cartItemsData.map((item) => ({
+            artListingId: item.artListingId || item.id,
+            title: item.title || item.artListing?.title,
+            price: item.price || item.artListing?.price,
             quantity: item.quantity,
           })),
         },
@@ -119,10 +139,12 @@ export async function POST(req: NextRequest) {
       // Development mode - return mock payment intent
       console.log('⚠️ Stripe not configured. Running in development mode.');
       
-      // Clear the cart after creating order
-      await prisma.cartItem.deleteMany({
-        where: { cartId: cart.id },
-      });
+      // Clear the cart after creating order (only if using database cart)
+      if (cartId && cartId !== 'local') {
+        await prisma.cartItem.deleteMany({
+          where: { cartId },
+        });
+      }
 
       return NextResponse.json({
         success: true,
@@ -137,6 +159,18 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Validate email for Stripe
+    const receiptEmail = shippingInfo?.email;
+    const isValidEmail = receiptEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(receiptEmail);
+
+    if (!isValidEmail) {
+      console.error('Invalid or missing email for Stripe payment:', receiptEmail);
+      return NextResponse.json(
+        { success: false, error: 'Valid email address is required for payment processing' },
+        { status: 400 }
+      );
+    }
+
     // Create Stripe payment intent
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(total * 100), // Convert to cents
@@ -146,7 +180,7 @@ export async function POST(req: NextRequest) {
         orderNumber,
         userId: user.id,
       },
-      receipt_email: shippingInfo?.email,
+      receipt_email: receiptEmail,
       shipping: shippingInfo
         ? {
             name: shippingInfo.name,
@@ -166,10 +200,12 @@ export async function POST(req: NextRequest) {
       data: { stripePaymentIntentId: paymentIntent.id },
     });
 
-    // Clear the cart after creating order
-    await prisma.cartItem.deleteMany({
-      where: { cartId: cart.id },
-    });
+    // Clear the cart after creating order (only if using database cart)
+    if (cartId && cartId !== 'local') {
+      await prisma.cartItem.deleteMany({
+        where: { cartId },
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -230,11 +266,7 @@ export async function GET(req: NextRequest) {
         userId: user.id,
       },
       include: {
-        items: {
-          include: {
-            artListing: true,
-          },
-        },
+        items: true,
         shipment: true,
       },
     });

@@ -623,3 +623,141 @@
   }
 }
 
+/* Shipping Options Styles */
+.loading-shipping {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.no-shipping {
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.no-shipping p {
+  margin: 0;
+}
+
+.shipping-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.shipping-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border: 2px solid #e5e5e5;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  width: 100%;
+}
+
+.shipping-option:hover {
+  border-color: #c9a227;
+  background: #fffbeb;
+}
+
+.shipping-option.selected {
+  border-color: #c9a227;
+  background: #fffbeb;
+}
+
+.option-radio {
+  display: flex;
+  align-items: center;
+  padding-top: 0.25rem;
+}
+
+.radio-circle {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.shipping-option.selected .radio-circle {
+  border-color: #c9a227;
+}
+
+.radio-dot {
+  width: 10px;
+  height: 10px;
+  background: #c9a227;
+  border-radius: 50%;
+}
+
+.option-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.option-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.option-courier {
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 0.9375rem;
+}
+
+.option-price {
+  font-weight: 700;
+  color: #c9a227;
+  font-size: 1rem;
+}
+
+.option-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.option-delivery {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: #666;
+}
+
+.option-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.feature-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  background: #e5e7eb;
+  color: #4b5563;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  border-radius: 4px;
+}
+
