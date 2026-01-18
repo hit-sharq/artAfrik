@@ -393,6 +393,9 @@ export default function Gallery() {
                         style={{ objectFit: "cover" }}
                         loader={cloudinaryLoader}
                       />
+                      {art.category && (
+                        <span className="art-category-badge">{art.category.name}</span>
+                      )}
                       <div className="art-overlay">
                         <a href="#" className="quick-view" onClick={(e) => openQuickView(art.id, e)}>
                           Quick View
@@ -412,7 +415,7 @@ export default function Gallery() {
                         </p>
                       )}
                       <p className="art-price">${art.price.toFixed(2)}</p>
-<div className="art-actions">
+                      <div className="art-actions">
                         <AddToCartButton artwork={art as unknown as ArtListingType} variant="default" />
                         <Link href={`/gallery/${art.id}`} className="button view-button">
                           View Details

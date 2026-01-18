@@ -409,7 +409,13 @@
   border-radius: 8px;
   font-size: 1rem;
   transition: all 0.2s ease;
-  background: #fafafa;
+  background: #ffffff;
+  color: #1a1a1a;
+}
+
+.products-management .form-input::placeholder,
+.products-management .form-textarea::placeholder {
+  color: #999999;
 }
 
 .products-management .form-input:focus,

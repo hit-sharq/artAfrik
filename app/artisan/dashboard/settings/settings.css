@@ -130,7 +130,13 @@
   border-radius: 8px;
   font-size: 1rem;
   transition: all 0.2s ease;
-  background: #fafafa;
+  background: #ffffff;
+  color: #1a1a1a;
+}
+
+.settings-management .form-input::placeholder,
+.settings-management .form-textarea::placeholder {
+  color: #999999;
 }
 
 .settings-management .form-input:focus,

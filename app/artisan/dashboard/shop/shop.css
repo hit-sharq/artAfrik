@@ -129,7 +129,13 @@
   border-radius: 8px;
   font-size: 1rem;
   transition: all 0.2s ease;
-  background: #fafafa;
+  background: #ffffff;
+  color: #1a1a1a;
+}
+
+.shop-management .form-input::placeholder,
+.shop-management .form-textarea::placeholder {
+  color: #999999;
 }
 
 .shop-management .form-input:focus,
@@ -220,8 +226,13 @@
   border: 2px solid #e9ecef;
   border-radius: 8px;
   font-size: 1rem;
-  background: #fafafa;
+  background: #ffffff;
+  color: #1a1a1a;
   transition: all 0.2s ease;
+}
+
+.shop-management .social-input::placeholder {
+  color: #999999;
 }
 
 .shop-management .social-input:focus {

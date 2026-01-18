@@ -152,8 +152,8 @@
 
 .gallery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 25px;
 }
 
 .gallery-list {
@@ -164,32 +164,46 @@
 
 .art-card {
   background-color: white;
-  border-radius: var(--border-radius);
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: var(--shadow);
-  transition: var(--transition);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid transparent;
+  text-decoration: none;
   position: relative;
 }
 
 .art-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  border-color: #ff7f50;
 }
 
 .art-card.list-view {
   display: grid;
   grid-template-columns: 300px 1fr;
+  text-decoration: none;
 }
 
 .art-image {
   width: 100%;
-  height: 300px;
+  height: 220px;
   position: relative;
   overflow: hidden;
 }
 
 .art-card.list-view .art-image {
   height: 100%;
+}
+
+.art-card:hover .art-image img {
+  transform: scale(1.1);
+}
+
+.art-image img {
+  transition: transform 0.5s ease;
 }
 
 .art-overlay {
@@ -254,45 +268,56 @@
 
 .art-info {
   padding: 20px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
 }
 
 .art-info h3 {
   margin-bottom: 8px;
   color: var(--primary-color);
-  font-size: 1.3rem;
   font-weight: 600;
+  font-size: 1.15rem;
+  line-height: 1.3;
 }
 
 .art-details {
-  color: #666;
-  font-size: 0.95rem;
+  color: #888;
+  font-size: 0.85rem;
   margin-bottom: 12px;
-}
-
-.art-description {
-  color: #555;
-  font-size: 0.95rem;
-  margin-bottom: 15px;
-  line-height: 1.6;
-}
-
-.art-meta {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  gap: 5px;
 }
 
-.art-artist {
+.art-artisan {
   color: #666;
   font-size: 0.9rem;
   font-style: italic;
+  margin-bottom: 12px;
+}
+
+.art-artisan a {
+  color: #e67e22;
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.2s ease;
+}
+
+.art-artisan a:hover {
+  color: #d35400;
+  text-decoration: underline;
 }
 
 .art-price {
   font-weight: 700;
-  color: var(--accent-color);
-  font-size: 1.2rem;
+  color: #c9a227;
+  font-size: 1.25rem;
+  margin-bottom: 15px;
 }
 
 .view-button {
@@ -560,8 +585,123 @@
   }
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .skeleton {
   animation: pulse 1.5s infinite;
+}
+
+.skeleton .skeleton-image {
+  height: 220px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton .art-info {
+  padding: 20px;
+}
+
+.skeleton-text {
+  height: 16px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.skeleton-text.short {
+  width: 60%;
+}
+
+.skeleton-button {
+  height: 45px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 25px;
+  margin-top: 15px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Category badge on art card */
+.art-category-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: linear-gradient(135deg, #c9a227 0%, #b8911f 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 5;
+}
+
+.art-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.art-actions .addtocart-wrapper {
+  flex: 1;
+}
+
+.art-actions .addtocart-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.art-actions .view-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  text-align: center;
+  border-radius: 25px;
+  padding: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  margin-top: 0;
+}
+
+.art-card {
+  animation: fadeIn 0.5s ease-in-out;
 }
 
 @media (max-width: 992px) {
@@ -594,6 +734,14 @@
   .pagination {
     flex-wrap: wrap;
   }
+
+  .art-image {
+    height: 200px;
+  }
+
+  .skeleton .skeleton-image {
+    height: 200px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -609,6 +757,16 @@
     max-width: 150px;
     flex-wrap: wrap;
     justify-content: center;
+  }
+
+  .art-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .art-actions .addtocart-btn,
+  .art-actions .view-button {
+    width: 100%;
   }
 }
 
@@ -628,8 +786,8 @@
   margin-bottom: 40px;
   padding: 30px;
   background: white;
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .featured-artisans-section h2 {
@@ -658,12 +816,12 @@
 
 .featured-artisan-card:hover {
   background: white;
-  border-color: var(--accent-color);
+  border-color: #ff7f50;
   transform: translateY(-3px);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-.artisan-avatar {
+.featured-artisans-section .artisan-avatar {
   width: 50px;
   height: 50px;
   border-radius: 50%;
@@ -677,60 +835,14 @@
   flex-shrink: 0;
 }
 
-.artisan-info h3 {
+.featured-artisan-card .artisan-info h3 {
   margin: 0 0 4px 0;
   font-size: 1rem;
   color: var(--primary-color);
 }
 
-.artisan-info p {
+.featured-artisan-card .artisan-info p {
   margin: 0;
   font-size: 0.85rem;
   color: #666;
-}
-
-/* Artisan link in art card */
-.art-artisan {
-  margin-bottom: 8px;
-}
-
-.art-artisan a {
-  color: #e67e22;
-  text-decoration: none;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  transition: color 0.2s ease;
-}
-
-.art-artisan a:hover {
-  color: #d35400;
-  text-decoration: underline;
-}
-
-/* Transition animations */
-.art-card {
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }

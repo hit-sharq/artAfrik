@@ -322,7 +322,8 @@
   border: 2px solid #e9ecef;
   border-radius: 8px;
   font-size: 0.85rem;
-  background: white;
+  background: #ffffff;
+  color: #1a1a1a;
   cursor: pointer;
 }
 
