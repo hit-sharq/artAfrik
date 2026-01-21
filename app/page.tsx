@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import MainLayout from "../components/MainLayout"
+import AddToCartButton from "../components/AddToCartButton"
+import { ArtListingType } from "../types"
 import "./home.css"
 import { cloudinaryLoader } from "../lib/cloudinary"
 
@@ -309,29 +311,30 @@ export default function Home() {
             ) : (
               featuredArtworks.map((art) => (
                 <div className="art-card" key={art.id}>
-                  <Link href={`/gallery/${art.id}`}>
-                    <div className="art-image">
-                      <Image
-                        src={art.images?.[0] || "/placeholder.svg"}
-                        alt={art.title}
-                        fill
-                        style={{ objectFit: "cover" }}
-                        loader={cloudinaryLoader}
-                      />
-                      {art.category && (
-                        <span className="art-category-badge">{art.category.name}</span>
-                      )}
-                    </div>
-                  </Link>
+                  <div className="art-image">
+                    <Image
+                      src={art.images?.[0] || "/placeholder.svg"}
+                      alt={art.title}
+                      fill
+                      style={{ objectFit: "cover" }}
+                      loader={cloudinaryLoader}
+                    />
+                    {art.category && (
+                      <span className="art-category-badge">{art.category.name}</span>
+                    )}
+                  </div>
                   <div className="art-info">
                     <Link href={`/gallery/${art.id}`}>
                       <h3>{art.title}</h3>
                     </Link>
                     <p className="art-origin">{art.region}</p>
                     <p className="art-price">${art.price?.toFixed(2) || "0.00"}</p>
-                    <Link href={`/gallery/${art.id}`} className="button view-button">
-                      View Details
-                    </Link>
+                    <div className="art-actions">
+                      <AddToCartButton artwork={art as unknown as ArtListingType} variant="default" />
+                      <Link href={`/gallery/${art.id}`} className="button view-button">
+                        View Details
+                      </Link>
+                    </div>
                   </div>
                 </div>
               ))

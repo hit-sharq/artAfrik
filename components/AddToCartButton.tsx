@@ -2,7 +2,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ShoppingCart, Plus, Check, Loader2 } from 'lucide-react';
+import { ShoppingCart, Plus, Check, Loader2, MessageCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { ArtListingType } from '@/types';
 import toast from 'react-hot-toast';
@@ -20,6 +21,7 @@ export default function AddToCartButton({
   showQuantity = false,
 }: AddToCartButtonProps) {
   const { addItem, getItem } = useCart();
+  const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   
@@ -28,38 +30,41 @@ export default function AddToCartButton({
 
   const handleAddToCart = async () => {
     setIsAdding(true);
-    
+
     try {
-      // Add to local cart
-      addItem(artwork, quantity);
-      
-      // Show success toast
-      toast.success(
-        <div className="toast-success">
-          <Check size={20} />
-          <span>
-            {isInCart 
-              ? `Quantity updated to ${existingItem.quantity + quantity}` 
-              : `${artwork.title} added to cart!`
-            }
-          </span>
+      // Show notification about payments under integration - DO NOT add to cart
+      toast(
+        <div className="toast-notification">
+          <ShoppingCart size={20} />
+          <div>
+            <span>Payments are currently under integration</span>
+            <p style={{ margin: '5px 0 0 0', fontSize: '14px' }}>
+              Please use the "Request This Product" button to inquire about this item.
+              We'll contact you with payment details once the system is ready.
+            </p>
+          </div>
         </div>,
         {
-          icon: '🛒',
+          duration: 5000,
           style: {
-            background: '#10b981',
+            background: '#f59e0b',
             color: 'white',
+            maxWidth: '400px',
           },
         }
       );
-      
+
       // Reset quantity
       setQuantity(1);
     } catch (error) {
-      toast.error('Failed to add to cart. Please try again.');
+      toast.error('An error occurred. Please try again.');
     } finally {
       setIsAdding(false);
     }
+  };
+
+  const handleRequestProduct = () => {
+    router.push(`/contact?type=product&pieceTitle=${encodeURIComponent(artwork.title)}`);
   };
 
   const incrementQuantity = () => setQuantity(q => q + 1);
@@ -67,18 +72,27 @@ export default function AddToCartButton({
 
   if (variant === 'icon-only') {
     return (
-      <button
-        className="addtocart-btn icon-only"
-        onClick={handleAddToCart}
-        disabled={isAdding}
-        aria-label="Add to cart"
-      >
-        {isAdding ? (
-          <Loader2 size={20} className="spin" />
-        ) : (
-          <ShoppingCart size={20} />
-        )}
-      </button>
+      <div className="addtocart-wrapper icon-only">
+        <button
+          className="addtocart-btn icon-only"
+          onClick={handleAddToCart}
+          disabled={isAdding}
+          aria-label="Add to cart"
+        >
+          {isAdding ? (
+            <Loader2 size={20} className="spin" />
+          ) : (
+            <ShoppingCart size={20} />
+          )}
+        </button>
+        <button
+          className="request-product-btn icon-only"
+          onClick={handleRequestProduct}
+          aria-label="Request this product"
+        >
+          <MessageCircle size={20} />
+        </button>
+      </div>
     );
   }
 
@@ -94,23 +108,32 @@ export default function AddToCartButton({
             <button onClick={incrementQuantity}>+</button>
           </div>
         )}
-        <button
-          className="addtocart-btn large"
-          onClick={handleAddToCart}
-          disabled={isAdding}
-        >
-          {isAdding ? (
-            <>
-              <Loader2 size={22} className="spin" />
-              Adding...
-            </>
-          ) : (
-            <>
-              <ShoppingCart size={22} />
-              Add to Cart - ${(artwork.price * quantity).toFixed(2)}
-            </>
-          )}
-        </button>
+        <div className="button-group">
+          <button
+            className="addtocart-btn large"
+            onClick={handleAddToCart}
+            disabled={isAdding}
+          >
+            {isAdding ? (
+              <>
+                <Loader2 size={22} className="spin" />
+                Adding...
+              </>
+            ) : (
+              <>
+                <ShoppingCart size={22} />
+                Add to Cart - ${(artwork.price * quantity).toFixed(2)}
+              </>
+            )}
+          </button>
+          <button
+            className="request-product-btn large"
+            onClick={handleRequestProduct}
+          >
+            <MessageCircle size={22} />
+            Request This Product
+          </button>
+        </div>
       </div>
     );
   }
@@ -126,20 +149,29 @@ export default function AddToCartButton({
           <button onClick={incrementQuantity}>+</button>
         </div>
       )}
-      <button
-        className="addtocart-btn"
-        onClick={handleAddToCart}
-        disabled={isAdding}
-      >
-        {isAdding ? (
-          <Loader2 size={18} className="spin" />
-        ) : (
-          <>
-            <ShoppingCart size={18} />
-            {isInCart ? 'Update Cart' : 'Add to Cart'}
-          </>
-        )}
-      </button>
+      <div className="button-group default">
+        <button
+          className="addtocart-btn"
+          onClick={handleAddToCart}
+          disabled={isAdding}
+        >
+          {isAdding ? (
+            <Loader2 size={18} className="spin" />
+          ) : (
+            <>
+              <ShoppingCart size={18} />
+              {isInCart ? 'Update Cart' : 'Add to Cart'}
+            </>
+          )}
+        </button>
+        <button
+          className="request-product-btn"
+          onClick={handleRequestProduct}
+        >
+          <MessageCircle size={18} />
+          Request Product
+        </button>
+      </div>
     </div>
   );
 }

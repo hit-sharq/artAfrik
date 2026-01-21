@@ -761,3 +761,44 @@
   border-radius: 4px;
 }
 
+/* Payment Notice */
+.payment-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+}
+
+.notice-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.notice-content h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.notice-content p {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: #92400e;
+  line-height: 1.5;
+}
+
+.notice-link {
+  color: #c9a227;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.notice-link:hover {
+  color: #b8922a;
+}
+
