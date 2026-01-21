@@ -1,4 +1,6 @@
 // Wishlist Page
+export const dynamic = 'force-dynamic'
+
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { Heart, ArrowLeft, ShoppingCart, Trash2, X } from 'lucide-react';

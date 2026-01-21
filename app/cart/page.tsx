@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { ShoppingCart, ArrowLeft, Trash2, Plus, Minus } from 'lucide-react';
