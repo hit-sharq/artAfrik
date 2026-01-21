@@ -1,9 +1,23 @@
 'use client';
 import { useState } from 'react';
 
+interface TrackingEvent {
+  description: string;
+  timestamp: string;
+  location?: string;
+}
+
+interface TrackingInfo {
+  trackingNumber: string;
+  statusDescription: string;
+  destination: string;
+  estimatedDelivery?: string;
+  events: TrackingEvent[];
+}
+
 export default function TrackingPage() {
   const [trackingNumber, setTrackingNumber] = useState('');
-  const [trackingInfo, setTrackingInfo] = useState(null);
+  const [trackingInfo, setTrackingInfo] = useState<TrackingInfo | null>(null);
   const [error, setError] = useState('');
   
   const searchTracking = async () => {
@@ -19,7 +33,7 @@ export default function TrackingPage() {
       setError(data.error || 'Shipment not found');
     }
   };
-  
+
   return (
     <div className="max-w-2xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6 text-center">Track Your Shipment</h1>
@@ -68,7 +82,7 @@ export default function TrackingPage() {
           
           <div className="mt-6">
             <h3 className="font-semibold mb-3">Tracking History</h3>
-            {trackingInfo.events.map((event: any, i: number) => (
+            {trackingInfo.events.map((event, i) => (
               <div key={i} className="border-l-2 border-gray-200 pl-4 py-2">
                 <p className="font-medium">{event.description}</p>
                 <p className="text-sm text-gray-500">
@@ -78,7 +92,9 @@ export default function TrackingPage() {
               </div>
             ))}
           </div>
+        </div>
       )}
     </div>
   );
 }
+
