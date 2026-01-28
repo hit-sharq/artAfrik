@@ -32,24 +32,19 @@ export default function AddToCartButton({
     setIsAdding(true);
 
     try {
-      // Show notification about payments under integration - DO NOT add to cart
-      toast(
-        <div className="toast-notification">
-          <ShoppingCart size={20} />
-          <div>
-            <span>Payments are currently under integration</span>
-            <p style={{ margin: '5px 0 0 0', fontSize: '14px' }}>
-              Please use the "Request This Product" button to inquire about this item.
-              We'll contact you with payment details once the system is ready.
-            </p>
-          </div>
-        </div>,
+      // Add item to cart
+      addItem(artwork, quantity);
+
+      // Show success toast
+      toast.success(
+        isInCart 
+          ? 'Cart updated successfully!' 
+          : `${artwork.title} added to cart!`,
         {
-          duration: 5000,
+          duration: 3000,
           style: {
-            background: '#f59e0b',
+            background: '#10b981',
             color: 'white',
-            maxWidth: '400px',
           },
         }
       );
