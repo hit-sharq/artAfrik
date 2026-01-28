@@ -118,6 +118,9 @@ export async function POST(req: NextRequest) {
     // Generate order number
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
+    // Generate PesaPal order ID
+    const pesapalOrderId = generatePesaPalOrderId(orderNumber);
+
     // Create order in database
     const order = await prisma.order.create({
       data: {
@@ -134,6 +137,7 @@ export async function POST(req: NextRequest) {
         shippingCity: shippingInfo?.city,
         shippingCountry: shippingInfo?.country,
         paymentMethod: 'pesapal',
+        pesapalOrderId,
         notes: body.notes,
         items: {
           create: cart.items.map((item) => ({

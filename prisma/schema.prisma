@@ -228,6 +228,8 @@ model Order {
   paymentStatus         PaymentStatus @default(PENDING)
   stripePaymentIntentId String?
   mpesaTransactionId    String?
+  pesapalTransactionId  String?
+  pesapalOrderId        String?
   notes                 String?
   
   // Shipping Address

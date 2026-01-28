@@ -1,5 +1,5 @@
-// Shipping Configuration for ArtAfrik - All prices in USD
-// Based on research from shipping-fees-kenya.md
+// Shipping Configuration for ArtAfrik
+// Local shipping in KES, International in USD
 
 export type ShippingZone = 
   | 'zone_a' // East Africa
@@ -8,11 +8,24 @@ export type ShippingZone =
   | 'zone_d' // Europe
   | 'zone_e' // Americas
   | 'zone_f' // Oceania
-  | 'local'; // Kenya (domestic) - Now in USD
+  | 'local'; // Kenya (domestic)
+
+export type LocalZone = 
+  | 'nairobi' // Nairobi
+  | 'major_cities' // Major cities in Kenya
+  | 'rural'; // Rural/other areas
 
 export interface ShippingRate {
   baseRate: number;
   ratePerKg: number;
+  currency: string;
+  estimatedDaysMin: number;
+  estimatedDaysMax: number;
+  courier: string;
+}
+
+export interface LocalShippingRate {
+  flatRate: number;
   currency: string;
   estimatedDaysMin: number;
   estimatedDaysMax: number;
@@ -25,15 +38,64 @@ export interface CountryMapping {
   zone: ShippingZone;
 }
 
-// Shipping Zones Configuration - All USD
+// Major cities in Kenya for shipping zone classification
+export const KENYA_MAJOR_CITIES = [
+  'Mombasa',
+  'Kisumu',
+  'Nakuru',
+  'Eldoret',
+  'Thika',
+  'Nyeri',
+  'Garissa',
+  'Meru',
+  'Kitale',
+  'Kericho',
+  'Embu',
+  'Machakos',
+  'Lodwar',
+  'Kapenguria',
+  'Nyamira',
+  'Bungoma',
+  'Malindi',
+  'Kitui',
+  'Migori',
+  'Kilifi',
+];
+
+// Local Zones Configuration - KES
+export const LOCAL_SHIPPING_ZONES: Record<LocalZone, LocalShippingRate> = {
+  nairobi: {
+    flatRate: 250,
+    currency: 'KES',
+    estimatedDaysMin: 1,
+    estimatedDaysMax: 2,
+    courier: 'Local Courier - Nairobi',
+  },
+  major_cities: {
+    flatRate: 500,
+    currency: 'KES',
+    estimatedDaysMin: 2,
+    estimatedDaysMax: 4,
+    courier: 'Local Courier - Major Cities',
+  },
+  rural: {
+    flatRate: 800,
+    currency: 'KES',
+    estimatedDaysMin: 3,
+    estimatedDaysMax: 7,
+    courier: 'Local Courier - Rural',
+  },
+};
+
+// Shipping Zones Configuration - USD (International)
 export const SHIPPING_ZONES: Record<ShippingZone, ShippingRate> = {
   local: {
-    baseRate: 10,
-    ratePerKg: 3,
+    baseRate: 0,
+    ratePerKg: 0,
     currency: 'USD',
-    estimatedDaysMin: 1,
-    estimatedDaysMax: 3,
-    courier: 'Local Courier',
+    estimatedDaysMin: 0,
+    estimatedDaysMax: 0,
+    courier: 'Local',
   },
   zone_a: {
     baseRate: 25,
@@ -133,7 +195,7 @@ export function getZoneInfo(zone: ShippingZone) {
 }
 
 export const FREE_SHIPPING_THRESHOLDS: Record<ShippingZone, number> = {
-  local: 100,
+  local: 0, // No free shipping for local
   zone_a: 150,
   zone_b: 200,
   zone_c: 250,
@@ -141,4 +203,48 @@ export const FREE_SHIPPING_THRESHOLDS: Record<ShippingZone, number> = {
   zone_e: 350,
   zone_f: 350,
 };
+
+// Local Zone Helper Functions
+export function getLocalZoneInfo(zone: LocalZone) {
+  return LOCAL_SHIPPING_ZONES[zone];
+}
+
+export function isMajorCity(city: string): boolean {
+  const normalizedCity = city.toLowerCase().trim();
+  return KENYA_MAJOR_CITIES.some(
+    majorCity => majorCity.toLowerCase() === normalizedCity
+  );
+}
+
+export function getLocalZoneFromCity(city: string): LocalZone {
+  const normalizedCity = city.toLowerCase().trim();
+  
+  // Check if Nairobi
+  if (normalizedCity === 'nairobi') {
+    return 'nairobi';
+  }
+  
+  // Check if major city
+  if (isMajorCity(normalizedCity)) {
+    return 'major_cities';
+  }
+  
+  // Default to rural
+  return 'rural';
+}
+
+export function formatLocalShippingCost(zone: LocalZone): string {
+  const zoneInfo = LOCAL_SHIPPING_ZONES[zone];
+  return `${zoneInfo.currency} ${zoneInfo.flatRate.toLocaleString()}`;
+}
+
+export function getLocalShippingInfo(zone: LocalZone) {
+  const zoneInfo = LOCAL_SHIPPING_ZONES[zone];
+  return {
+    courier: zoneInfo.courier,
+    estimatedDelivery: `${zoneInfo.estimatedDaysMin}-${zoneInfo.estimatedDaysMax} business days`,
+    flatRate: zoneInfo.flatRate,
+    currency: zoneInfo.currency,
+  };
+}
 

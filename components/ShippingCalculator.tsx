@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { 
-  useShipping, 
-  useCartShipping
-} from '@/hooks/use-shipping';
-import { COUNTRY_ZONE_MAPPING } from '@/lib/shipping-config';
+import { useShipping, useCartShipping } from '@/hooks/use-shipping';
+import type { LocalShippingInfo, InternationalShippingInfo } from '@/hooks/use-shipping';
+import { COUNTRY_ZONE_MAPPING, KENYA_MAJOR_CITIES } from '@/lib/shipping-config';
 import type { CartItemWithWeight } from '@/lib/shipping-calculator';
+import type { LocalShippingCalculationResult } from '@/lib/shipping-calculator';
+import type { ShippingCalculationResult } from '@/lib/shipping-calculator';
 
 interface ShippingCalculatorProps {
   cartItems?: CartItemWithWeight[];
@@ -22,12 +22,17 @@ export default function ShippingCalculator({
   const {
     countryCode,
     setCountryCode,
+    city,
+    setCity,
+    localZone,
+    setLocalZone,
     calculateForSubtotal,
     getOptionsForSubtotal,
-    formatShippingCost,
+    formatShipping,
     shippingInfo,
     isFreeShipping,
     estimatedDelivery,
+    isLocal,
   } = useShipping({ defaultCountry: 'KE' });
 
   const subtotal = useMemo(() => {
@@ -47,13 +52,57 @@ export default function ShippingCalculator({
 
   useEffect(() => {
     if (onShippingChange) {
-      onShippingChange(shippingCalculation.totalKES, shippingCalculation.isFreeShipping);
+      if (isLocal && shippingCalculation) {
+        const localCalc = shippingCalculation as LocalShippingCalculationResult;
+        onShippingChange(localCalc.flatRate, localCalc.isFreeShipping);
+      } else if (shippingCalculation) {
+        const intlCalc = shippingCalculation as ShippingCalculationResult;
+        onShippingChange(intlCalc.totalKES, intlCalc.isFreeShipping);
+      }
     }
-  }, [shippingCalculation, onShippingChange]);
+  }, [shippingCalculation, onShippingChange, isLocal]);
 
   const selectedCountry = useMemo(() => {
     return COUNTRY_ZONE_MAPPING.find(c => c.code === countryCode);
   }, [countryCode]);
+
+  // Helper to get shipping cost display
+  const getShippingCostDisplay = (): string => {
+    if (!shippingCalculation) return 'N/A';
+    
+    if (isLocal) {
+      const calc = shippingCalculation as LocalShippingCalculationResult;
+      return `KES ${calc.flatRate.toLocaleString()}`;
+    } else {
+      const calc = shippingCalculation as ShippingCalculationResult;
+      return calc.isFreeShipping ? 'FREE' : `$${calc.totalUSD.toFixed(2)}`;
+    }
+  };
+
+  // Helper to get shipping info display
+  const getShippingInfoDisplay = () => {
+    if (!shippingInfo) return { delivery: '', courier: '', shippingCost: '', freeShipping: '' };
+    
+    if (isLocal) {
+      const info = shippingInfo as LocalShippingInfo;
+      return {
+        delivery: estimatedDelivery,
+        courier: info.courier,
+        shippingCost: `KES ${info.flatRate.toLocaleString()}`,
+        freeShipping: 'N/A',
+      };
+    } else {
+      const info = shippingInfo as InternationalShippingInfo;
+      return {
+        delivery: estimatedDelivery,
+        courier: info.courier,
+        shippingCost: '',
+        freeShipping: `$${info.freeShippingThreshold.toLocaleString()}+`,
+      };
+    }
+  };
+
+  const shippingInfoDisplay = getShippingInfoDisplay();
 
   return (
     <div className="shipping-calculator">
@@ -77,32 +126,77 @@ export default function ShippingCalculator({
         </select>
       </div>
 
+      {/* Local Zone Selector for Kenya */}
+      {isLocal && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">
+            Location in Kenya
+          </label>
+          <select
+            value={city || localZone}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Check if it's a city name
+              if (KENYA_MAJOR_CITIES.some(c => c === value)) {
+                setCity(value);
+                setLocalZone('major_cities');
+              } else if (value === 'nairobi') {
+                setCity(value);
+                setLocalZone('nairobi');
+              } else {
+                // It's a zone selector
+                setCity('');
+                setLocalZone(value);
+              }
+            }}
+            className="w-full p-2 border rounded-lg"
+          >
+            <optgroup label="Nairobi">
+              <option value="nairobi">Nairobi</option>
+            </optgroup>
+            <optgroup label="Major Cities">
+              {KENYA_MAJOR_CITIES.map((cityName) => (
+                <option key={cityName} value={cityName}>{cityName}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Other Areas">
+              <option value="rural">Rural / Other Areas</option>
+            </optgroup>
+          </select>
+        </div>
+      )}
+
       {countryCode && (
         <div className="bg-gray-50 p-4 rounded-lg mb-4">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm text-gray-600">Estimated Delivery:</span>
-            <span className="text-sm font-medium">{estimatedDelivery}</span>
+            <span className="text-sm font-medium">{shippingInfoDisplay.delivery}</span>
           </div>
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm text-gray-600">Carrier:</span>
-            <span className="text-sm font-medium">{shippingInfo.courier}</span>
+            <span className="text-sm font-medium">{shippingInfoDisplay.courier}</span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Free Shipping:</span>
-            <span className="text-sm font-medium">
-              KES {shippingInfo.freeShippingThreshold.toLocaleString()}+
-            </span>
-          </div>
+          {isLocal ? (
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Shipping Cost:</span>
+              <span className="text-sm font-medium">{shippingInfoDisplay.shippingCost}</span>
+            </div>
+          ) : (
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Free Shipping:</span>
+              <span className="text-sm font-medium">{shippingInfoDisplay.freeShipping}</span>
+            </div>
+          )}
         </div>
       )}
 
-      {showOptions && shippingOptions.length > 0 && (
+      {showOptions && shippingOptions.length > 0 && !isLocal && (
         <div className="mb-4">
           <label className="block text-sm font-medium mb-2">
             Select Shipping Option
           </label>
           <div className="space-y-2">
-            {shippingOptions.map((option, index) => (
+            {(shippingOptions as ShippingCalculationResult[]).map((option, index) => (
               <label
                 key={index}
                 className={`flex items-center p-3 border rounded-lg cursor-pointer ${
@@ -124,7 +218,7 @@ export default function ShippingCalculator({
                     <span className={`font-bold ${
                       option.isFreeShipping ? 'text-green-600' : ''
                     }`}>
-                      {formatShippingCost(option)}
+                      {formatShipping(option)}
                     </span>
                   </div>
                   <div className="text-sm text-gray-500">
@@ -137,23 +231,26 @@ export default function ShippingCalculator({
         </div>
       )}
 
-      {!isFreeShipping && subtotal > 0 && (
+      {!isFreeShipping && !isLocal && subtotal > 0 && (() => {
+        const intlInfo = shippingInfo as InternationalShippingInfo;
+        return intlInfo.freeShippingThreshold ? (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
           <p className="text-sm text-blue-700">
-            Add KES {(
-              shippingInfo.freeShippingThreshold - subtotal
+            Add ${(
+              intlInfo.freeShippingThreshold - subtotal
             ).toLocaleString()} more for free shipping!
           </p>
           <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
             <div 
               className="bg-blue-600 h-2 rounded-full"
               style={{
-                width: `${Math.min(100, (subtotal / shippingInfo.freeShippingThreshold) * 100)}%`
+                width: `${Math.min(100, (subtotal / intlInfo.freeShippingThreshold) * 100)}%`
               }}
             />
           </div>
         </div>
-      )}
+        ) : null;
+      })()}
 
       <div className="border-t pt-4">
         <div className="flex justify-between items-center">
@@ -161,7 +258,7 @@ export default function ShippingCalculator({
           <span className={`text-xl font-bold ${
             isFreeShipping ? 'text-green-600' : ''
           }`}>
-            {formatShippingCost(shippingCalculation)}
+            {getShippingCostDisplay()}
           </span>
         </div>
       </div>
@@ -176,45 +273,106 @@ export function CartShippingSummary({
   items: CartItemWithWeight[];
   countryCode: string;
 }) {
-  const { totalWeight, subtotal, shippingOptions, selectedOption, total, setSelectedService } = 
-    useCartShipping(countryCode, items);
+  const { 
+    totalWeight, 
+    subtotal, 
+    shippingOptions, 
+    selectedOption, 
+    total, 
+    setSelectedService,
+    city,
+    setCity,
+    localZone,
+    setLocalZone,
+    isLocal,
+  } = useCartShipping(countryCode, items);
+
+  const isKenya = countryCode.toUpperCase() === 'KE';
 
   return (
     <div className="bg-gray-50 p-4 rounded-lg">
       <h4 className="font-semibold mb-3">Shipping</h4>
       
-      <div className="mb-3 text-sm">
-        <span className="text-gray-600">Weight: </span>
-        <span className="font-medium">{totalWeight.toFixed(2)} kg</span>
-      </div>
+      {/* Local Zone Selector for Kenya */}
+      {isKenya && (
+        <div className="mb-3">
+          <label className="block text-sm font-medium mb-2">
+            Location
+          </label>
+          <select
+            value={city || localZone}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (KENYA_MAJOR_CITIES.some(c => c === value)) {
+                setCity(value);
+                setLocalZone('major_cities');
+              } else if (value === 'nairobi') {
+                setCity(value);
+                setLocalZone('nairobi');
+              } else {
+                setCity('');
+                setLocalZone(value);
+              }
+            }}
+            className="w-full p-2 border rounded-lg text-sm"
+          >
+            <optgroup label="Nairobi">
+              <option value="nairobi">Nairobi - KES 250</option>
+            </optgroup>
+            <optgroup label="Major Cities">
+              {KENYA_MAJOR_CITIES.map((cityName) => (
+                <option key={cityName} value={cityName}>{cityName} - KES 500</option>
+              ))}
+            </optgroup>
+            <optgroup label="Other Areas">
+              <option value="rural">Rural / Other - KES 800</option>
+            </optgroup>
+          </select>
+        </div>
+      )}
+      
+      {!isKenya && (
+        <div className="mb-3 text-sm">
+          <span className="text-gray-600">Weight: </span>
+          <span className="font-medium">{totalWeight.toFixed(2)} kg</span>
+        </div>
+      )}
 
       <div className="space-y-2 mb-4">
-        {shippingOptions.map((option, index) => (
+        {(isKenya 
+          ? (shippingOptions as LocalShippingCalculationResult[]) 
+          : (shippingOptions as ShippingCalculationResult[])
+        ).map((option: any, index: number) => (
           <label
             key={index}
             className="flex items-center justify-between p-2 border rounded cursor-pointer hover:bg-white"
           >
             <div className="flex items-center">
-              <input
-                type="radio"
-                name="cartShipping"
-                value={option.courier}
-                checked={selectedOption.courier === option.courier}
-                onChange={() => setSelectedService(
-                  option.courier.includes('Economy') ? 'economy' : 
-                  option.courier.includes('Priority') ? 'priority' : 'standard'
-                )}
-                className="mr-2"
-              />
+              {!isKenya && (
+                <input
+                  type="radio"
+                  name="cartShipping"
+                  value={option.courier}
+                  checked={selectedOption.courier === option.courier}
+                  onChange={() => setSelectedService(
+                    option.courier.includes('Economy') ? 'economy' : 
+                    option.courier.includes('Priority') ? 'priority' : 'standard'
+                  )}
+                  className="mr-2"
+                />
+              )}
               <div>
                 <div className="text-sm font-medium">{option.courier}</div>
                 <div className="text-xs text-gray-500">{option.estimatedDays}</div>
               </div>
             </div>
             <div className="text-sm font-bold">
-              {option.isFreeShipping ? 'FREE' : 
-                option.currency === 'USD' ? `$${option.totalUSD.toFixed(2)}` : 
-                `KES ${option.totalKES.toLocaleString()}`}
+              {isKenya 
+                ? `KES ${option.flatRate?.toLocaleString()}` 
+                : option.isFreeShipping 
+                  ? 'FREE' 
+                  : `$${option.totalUSD?.toFixed(2)}`
+              }
             </div>
           </label>
         ))}
@@ -224,8 +382,12 @@ export function CartShippingSummary({
         <div className="flex justify-between items-center">
           <span className="text-sm">Shipping:</span>
           <span className={`font-bold ${total.isFreeShipping ? 'text-green-600' : ''}`}>
-            {total.isFreeShipping ? 'FREE' : 
-              `KES ${total.shipping.toLocaleString()}`}
+            {isKenya 
+              ? `KES ${(selectedOption as LocalShippingCalculationResult).flatRate?.toLocaleString() || '0'}` 
+              : total.isFreeShipping 
+                ? 'FREE' 
+                : `$${(selectedOption as ShippingCalculationResult).totalUSD?.toFixed(2)}`
+            }
           </span>
         </div>
       </div>

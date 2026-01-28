@@ -5,7 +5,11 @@ import {
   SHIPPING_ZONES, 
   getShippingZone, 
   getZoneInfo,
-  FREE_SHIPPING_THRESHOLDS 
+  FREE_SHIPPING_THRESHOLDS,
+  LocalZone,
+  LOCAL_SHIPPING_ZONES,
+  getLocalZoneInfo,
+  getLocalZoneFromCity,
 } from './shipping-config';
 
 export interface ShippingCalculationParams {
@@ -168,6 +172,79 @@ export function getShippingInfo(countryCode: string) {
 export function isValidShippingDestination(countryCode: string): boolean {
   const zone = getShippingZone(countryCode);
   return zone !== undefined;
+}
+
+// ===========================================
+// LOCAL ZONE-BASED SHIPPING (KENYA)
+// ===========================================
+
+export interface LocalShippingCalculationResult {
+  zone: LocalZone;
+  flatRate: number;
+  currency: string;
+  estimatedDays: string;
+  courier: string;
+  isFreeShipping: boolean;
+}
+
+export interface LocalShippingParams {
+  countryCode: string;
+  city?: string;
+  zone?: LocalZone;
+}
+
+export function calculateLocalShipping(
+  params: LocalShippingParams
+): LocalShippingCalculationResult {
+  const { countryCode, city, zone: explicitZone } = params;
+  
+  // Determine the local zone
+  let localZone: LocalZone;
+  if (explicitZone) {
+    localZone = explicitZone;
+  } else if (city) {
+    localZone = getLocalZoneFromCity(city);
+  } else {
+    localZone = 'rural'; // Default to rural if no city specified
+  }
+  
+  const zoneInfo = getLocalZoneInfo(localZone);
+  
+  return {
+    zone: localZone,
+    flatRate: zoneInfo.flatRate,
+    currency: zoneInfo.currency,
+    estimatedDays: `${zoneInfo.estimatedDaysMin}-${zoneInfo.estimatedDaysMax} days`,
+    courier: zoneInfo.courier,
+    isFreeShipping: false, // No free shipping for local
+  };
+}
+
+export function getLocalShippingOptions(
+  countryCode: string,
+  city?: string
+): LocalShippingCalculationResult[] {
+  // For local shipping, we only have one flat rate per zone
+  const result = calculateLocalShipping({ countryCode, city });
+  
+  return [result];
+}
+
+export function formatLocalShippingCost(result: LocalShippingCalculationResult): string {
+  return `${result.currency} ${result.flatRate.toLocaleString()}`;
+}
+
+export function getLocalShippingInfo(countryCode: string, city?: string) {
+  const result = calculateLocalShipping({ countryCode, city });
+  const zoneInfo = getLocalZoneInfo(result.zone);
+  
+  return {
+    zone: result.zone,
+    courier: zoneInfo.courier,
+    estimatedDelivery: `${zoneInfo.estimatedDaysMin}-${zoneInfo.estimatedDaysMax} business days`,
+    flatRate: zoneInfo.flatRate,
+    currency: zoneInfo.currency,
+  };
 }
 
 
