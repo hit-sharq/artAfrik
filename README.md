@@ -1,4 +1,4 @@
-# 🎨 ArtAfrik
+<!-- # 🎨 ArtAfrik
 
 **ArtAfrik** is a full-stack web platform that curates and sells authentic Maasai Market goods and handcrafted African art — including beadwork, textiles, jewelry, paintings, home décor, carvings, masks, sculptures, and other traditional crafts — connecting collectors worldwide with talented African artisans.
 
@@ -96,7 +96,6 @@ Copy
 Edit
 npm run dev
 
-
 *🌟 Contributing*
 ================
 
@@ -115,4 +114,4 @@ This project is licensed under the MIT License.
 Joshua Mwendwa – Software Engineer & Founder of ArtAfrik
 LinkedIn https://www.linkedin.com/in/lee-joshua-b183b5287/ | GitHub https://github.com/hit-sharq
 
-
+ -->
